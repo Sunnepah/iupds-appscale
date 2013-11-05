@@ -42,7 +42,7 @@ libraries:
 - name: django
   version: latest
 
-# Handlers tell app engine how to route requests to your application.
+# Handlers tell App Engine how to route requests to your application.
 handlers:
 
 # This handler routes requests sent via the deferred library.
