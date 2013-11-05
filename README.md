@@ -48,7 +48,10 @@ appcfg.py --oauth2 update [projectDirectory]
 or use the App Engine Launcher.
 
 ## Next Steps
-This skeleton provides a very simple Django application. Check out the
+This skeleton includes TODO markers you can search for to determine some of the
+basic areas you will want to customize.
+
+This is a very simple Django application. Check out the
 [Django site](https://www.djangoproject.com/) for ideas on how to extend the
 application.
 
