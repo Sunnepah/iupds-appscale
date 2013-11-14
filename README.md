@@ -11,9 +11,9 @@ scaffolding for other Python frameworks and use cases.
 
 ## Run Locally
 1. Install the [App Engine Python SDK](https://developers.google.com/appengine/downloads).
-See the README file for directions. You'll need Python 2.7 and [pip 1.4 or later](http://www.pip-installer.org/en/latest/installing.html) installed too.
+See the README file for directions. You'll need Python 2.7, [pip 1.4 or later](http://www.pip-installer.org/en/latest/installing.html), and [mercurial](http://mercurial.selenic.com/) (`hg`) installed too.
 
-2. Clone this repo with
+2. Clone this repo with:
 
    ```
    git clone https://github.com/GoogleCloudPlatform/appengine-django-skeleton.git
@@ -22,7 +22,8 @@ See the README file for directions. You'll need Python 2.7 and [pip 1.4 or later
    can only import libraries from inside your project directory.
    ```
    cd appengine-django-skeleton
-   pip install -r requirements.txt -t .
+
+   ./build.sh
    ```
 4. Run this project locally from the command line:
 
@@ -41,11 +42,8 @@ To deploy the application:
 1. Use the [Admin Console](https://appengine.google.com) to create an app.
 1. Replace `your-app-id` in `app.yaml` with the app id from the previous step.
 1. [Deploy the
-   application](https://developers.google.com/appengine/docs/python/tools/uploadinganapp) with
-```
-appcfg.py --oauth2 update [projectDirectory]
-```
-or use the App Engine Launcher.
+   application](https://developers.google.com/appengine/docs/python/tools/uploadinganapp) with:
+   `appcfg.py --oauth2 update [projectDirectory]` or use the App Engine Launcher.
 1. Congratulations! Your application is now live at `your-app-id`.appspot.com.
 
 ## Next Steps
