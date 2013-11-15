@@ -12,6 +12,7 @@ scaffolding for other Python frameworks and use cases.
 ## Run Locally
 1. Install the [App Engine Python SDK](https://developers.google.com/appengine/downloads).
 See the README file for directions. You'll need Python 2.7, [pip 1.4 or later](http://www.pip-installer.org/en/latest/installing.html), and [mercurial](http://mercurial.selenic.com/) (`hg`) installed too.
+If you're missing `hg` you can install it with `pip install mercurial` once you have `pip` installed.
 
 2. Clone this repo with:
 
