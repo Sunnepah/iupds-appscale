@@ -72,7 +72,7 @@ Star this repo if you found it useful. Use the github issue tracker to give
 feedback on this repo and to ask for scaffolds for other use cases.
 
 ## Contributing changes
-See [CONTRIB.md](CONTRIB.md)
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Licensing
 See [LICENSE](LICENSE)
