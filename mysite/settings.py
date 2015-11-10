@@ -95,7 +95,7 @@ if os.getenv('SERVER_SOFTWARE', '').startswith('Google App Engine'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'HOST': '/cloudsql/<your-cloud-project-id>:<your-database-name>',
+            'HOST': '/cloudsql/cloud-monitoring-external:library',
             'NAME': 'polls',
             'USER': 'root',
         }
