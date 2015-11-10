@@ -1,8 +1,4 @@
-# Project specific .gitignore
-lib/
-
 # Global .gitignore
-
 .DS_Store
 *.pyc
 .gaedata
@@ -22,7 +18,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
