@@ -180,6 +180,13 @@ class BaseExpression(object):
                 return True
         return False
 
+    @cached_property
+    def contains_column_references(self):
+        for expr in self.get_source_expressions():
+            if expr and expr.contains_column_references:
+                return True
+        return False
+
     def resolve_expression(self, query=None, allow_joins=True, reuse=None, summarize=False, for_save=False):
         """
         Provides the chance to do any preprocessing or validation before being
@@ -338,6 +345,17 @@ class BaseExpression(object):
 
     def reverse_ordering(self):
         return self
+
+    def flatten(self):
+        """
+        Recursively yield this expression and all subexpressions, in
+        depth-first order.
+        """
+        yield self
+        for expr in self.get_source_expressions():
+            if expr:
+                for inner_expr in expr.flatten():
+                    yield inner_expr
 
 
 class Expression(BaseExpression, Combinable):
@@ -507,6 +525,15 @@ class Func(Expression):
         template = template or self.extra.get('template', self.template)
         return template % self.extra, params
 
+    def as_sqlite(self, *args, **kwargs):
+        sql, params = self.as_sql(*args, **kwargs)
+        try:
+            if self.output_field.get_internal_type() == 'DecimalField':
+                sql = 'CAST(%s AS NUMERIC)' % sql
+        except FieldError:
+            pass
+        return sql, params
+
     def copy(self):
         copy = super(Func, self).copy()
         copy.source_expressions = self.source_expressions[:]
@@ -604,6 +631,9 @@ class Random(Expression):
 
 
 class Col(Expression):
+
+    contains_column_references = True
+
     def __init__(self, alias, target, output_field=None):
         if output_field is None:
             output_field = target

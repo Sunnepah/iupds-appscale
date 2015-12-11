@@ -9,7 +9,6 @@ except ImportError:
 
 class DatabaseFeatures(BaseDatabaseFeatures):
     empty_fetchmany_value = ()
-    needs_datetime_string_cast = False
     interprets_empty_strings_as_nulls = True
     uses_savepoints = True
     has_select_for_update = True
@@ -28,6 +27,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     has_bulk_insert = True
     supports_tablespaces = True
     supports_sequence_reset = False
+    can_introspect_default = False  # Pending implementation by an interested person.
     can_introspect_max_length = False
     can_introspect_time_field = False
     atomic_transactions = False

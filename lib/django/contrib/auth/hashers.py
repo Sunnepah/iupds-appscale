@@ -221,12 +221,12 @@ class PBKDF2PasswordHasher(BasePasswordHasher):
     """
     Secure password hashing using the PBKDF2 algorithm (recommended)
 
-    Configured to use PBKDF2 + HMAC + SHA256 with 20000 iterations.
+    Configured to use PBKDF2 + HMAC + SHA256.
     The result is a 64 byte binary string.  Iterations may be changed
     safely but you must rename the algorithm if you change SHA256.
     """
     algorithm = "pbkdf2_sha256"
-    iterations = 20000
+    iterations = 24000
     digest = hashlib.sha256
 
     def encode(self, password, salt, iterations=None):
@@ -286,7 +286,7 @@ class BCryptSHA256PasswordHasher(BasePasswordHasher):
 
     def salt(self):
         bcrypt = self._load_library()
-        return bcrypt.gensalt(self.rounds)
+        return bcrypt.gensalt(rounds=self.rounds)
 
     def encode(self, password, salt):
         bcrypt = self._load_library()
@@ -336,6 +336,10 @@ class BCryptSHA256PasswordHasher(BasePasswordHasher):
             (_('salt'), mask_hash(salt)),
             (_('checksum'), mask_hash(checksum)),
         ])
+
+    def must_update(self, encoded):
+        algorithm, empty, algostr, rounds, data = encoded.split('$', 4)
+        return int(rounds) != self.rounds
 
 
 class BCryptPasswordHasher(BCryptSHA256PasswordHasher):

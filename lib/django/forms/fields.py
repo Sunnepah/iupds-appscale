@@ -18,6 +18,7 @@ from django.core import validators
 from django.core.exceptions import ValidationError
 # Provide this import for backwards compatibility.
 from django.core.validators import EMPTY_VALUES  # NOQA
+from django.forms.boundfield import BoundField
 from django.forms.utils import from_current_timezone, to_current_timezone
 from django.forms.widgets import (
     FILE_INPUT_CONTRADICTION, CheckboxInput, ClearableFileInput, DateInput,
@@ -29,7 +30,7 @@ from django.forms.widgets import (
 from django.utils import formats, six
 from django.utils.dateparse import parse_duration
 from django.utils.deprecation import (
-    RemovedInDjango19Warning, RemovedInDjango110Warning, RenameMethodsBase,
+    RemovedInDjango110Warning, RenameMethodsBase,
 )
 from django.utils.duration import duration_string
 from django.utils.encoding import force_str, force_text, smart_text
@@ -43,7 +44,7 @@ __all__ = (
     'RegexField', 'EmailField', 'FileField', 'ImageField', 'URLField',
     'BooleanField', 'NullBooleanField', 'ChoiceField', 'MultipleChoiceField',
     'ComboField', 'MultiValueField', 'FloatField', 'DecimalField',
-    'SplitDateTimeField', 'IPAddressField', 'GenericIPAddressField', 'FilePathField',
+    'SplitDateTimeField', 'GenericIPAddressField', 'FilePathField',
     'SlugField', 'TypedChoiceField', 'TypedMultipleChoiceField', 'UUIDField',
 )
 
@@ -70,7 +71,7 @@ class Field(six.with_metaclass(RenameFieldMethods, object)):
 
     def __init__(self, required=True, widget=None, label=None, initial=None,
                  help_text='', error_messages=None, show_hidden_initial=False,
-                 validators=[], localize=False, label_suffix=None):
+                 validators=[], localize=False, disabled=False, label_suffix=None):
         # required -- Boolean that specifies whether the field is required.
         #             True by default.
         # widget -- A Widget class, or instance of a Widget class, that should
@@ -90,11 +91,14 @@ class Field(six.with_metaclass(RenameFieldMethods, object)):
         #                        hidden widget with initial value after widget.
         # validators -- List of additional validators to use
         # localize -- Boolean that specifies if the field should be localized.
+        # disabled -- Boolean that specifies whether the field is disabled, that
+        #             is its widget is shown in the form but not editable.
         # label_suffix -- Suffix to be added to the label. Overrides
         #                 form's label_suffix.
         self.required, self.label, self.initial = required, label, initial
         self.show_hidden_initial = show_hidden_initial
         self.help_text = help_text
+        self.disabled = disabled
         self.label_suffix = label_suffix
         widget = widget or self.widget
         if isinstance(widget, type):
@@ -195,10 +199,18 @@ class Field(six.with_metaclass(RenameFieldMethods, object)):
             data = self.to_python(data)
             if hasattr(self, '_coerce'):
                 data = self._coerce(data)
+                initial_value = self._coerce(initial_value)
         except ValidationError:
             return True
         data_value = data if data is not None else ''
         return initial_value != data_value
+
+    def get_bound_field(self, form, field_name):
+        """
+        Return a BoundField instance that will be used when accessing the form
+        field in a template.
+        """
+        return BoundField(form, self, field_name)
 
     def __deepcopy__(self, memo):
         result = copy.copy(self)
@@ -209,8 +221,10 @@ class Field(six.with_metaclass(RenameFieldMethods, object)):
 
 
 class CharField(Field):
-    def __init__(self, max_length=None, min_length=None, *args, **kwargs):
-        self.max_length, self.min_length = max_length, min_length
+    def __init__(self, max_length=None, min_length=None, strip=True, *args, **kwargs):
+        self.max_length = max_length
+        self.min_length = min_length
+        self.strip = strip
         super(CharField, self).__init__(*args, **kwargs)
         if min_length is not None:
             self.validators.append(validators.MinLengthValidator(int(min_length)))
@@ -221,7 +235,10 @@ class CharField(Field):
         "Returns a Unicode object."
         if value in self.empty_values:
             return ''
-        return smart_text(value)
+        value = force_text(value)
+        if self.strip:
+            value = value.strip()
+        return value
 
     def widget_attrs(self, widget):
         attrs = super(CharField, self).widget_attrs(widget)
@@ -236,6 +253,7 @@ class IntegerField(Field):
     default_error_messages = {
         'invalid': _('Enter a whole number.'),
     }
+    re_decimal = re.compile(r'\.0*\s*$')
 
     def __init__(self, max_value=None, min_value=None, *args, **kwargs):
         self.max_value, self.min_value = max_value, min_value
@@ -259,8 +277,9 @@ class IntegerField(Field):
             return None
         if self.localize:
             value = formats.sanitize_separators(value)
+        # Strip trailing decimal and zeros.
         try:
-            value = int(str(value))
+            value = int(self.re_decimal.sub('', str(value)))
         except (ValueError, TypeError):
             raise ValidationError(self.error_messages['invalid'], code='invalid')
         return value
@@ -315,23 +334,12 @@ class FloatField(IntegerField):
 class DecimalField(IntegerField):
     default_error_messages = {
         'invalid': _('Enter a number.'),
-        'max_digits': ungettext_lazy(
-            'Ensure that there are no more than %(max)s digit in total.',
-            'Ensure that there are no more than %(max)s digits in total.',
-            'max'),
-        'max_decimal_places': ungettext_lazy(
-            'Ensure that there are no more than %(max)s decimal place.',
-            'Ensure that there are no more than %(max)s decimal places.',
-            'max'),
-        'max_whole_digits': ungettext_lazy(
-            'Ensure that there are no more than %(max)s digit before the decimal point.',
-            'Ensure that there are no more than %(max)s digits before the decimal point.',
-            'max'),
     }
 
     def __init__(self, max_value=None, min_value=None, max_digits=None, decimal_places=None, *args, **kwargs):
         self.max_digits, self.decimal_places = max_digits, decimal_places
         super(DecimalField, self).__init__(max_value, min_value, *args, **kwargs)
+        self.validators.append(validators.DecimalValidator(max_digits, decimal_places))
 
     def to_python(self, value):
         """
@@ -360,38 +368,6 @@ class DecimalField(IntegerField):
         # isn't equal to itself, so we can use this to identify NaN
         if value != value or value == Decimal("Inf") or value == Decimal("-Inf"):
             raise ValidationError(self.error_messages['invalid'], code='invalid')
-        sign, digittuple, exponent = value.as_tuple()
-        decimals = abs(exponent)
-        # digittuple doesn't include any leading zeros.
-        digits = len(digittuple)
-        if decimals > digits:
-            # We have leading zeros up to or past the decimal point.  Count
-            # everything past the decimal point as a digit.  We do not count
-            # 0 before the decimal point as a digit since that would mean
-            # we would not allow max_digits = decimal_places.
-            digits = decimals
-        whole_digits = digits - decimals
-
-        if self.max_digits is not None and digits > self.max_digits:
-            raise ValidationError(
-                self.error_messages['max_digits'],
-                code='max_digits',
-                params={'max': self.max_digits},
-            )
-        if self.decimal_places is not None and decimals > self.decimal_places:
-            raise ValidationError(
-                self.error_messages['max_decimal_places'],
-                code='max_decimal_places',
-                params={'max': self.decimal_places},
-            )
-        if (self.max_digits is not None and self.decimal_places is not None
-                and whole_digits > (self.max_digits - self.decimal_places)):
-            raise ValidationError(
-                self.error_messages['max_whole_digits'],
-                code='max_whole_digits',
-                params={'max': (self.max_digits - self.decimal_places)},
-            )
-        return value
 
     def widget_attrs(self, widget):
         attrs = super(DecimalField, self).widget_attrs(widget)
@@ -501,18 +477,6 @@ class DateTimeField(BaseTemporalField):
         if isinstance(value, datetime.date):
             result = datetime.datetime(value.year, value.month, value.day)
             return from_current_timezone(result)
-        if isinstance(value, list):
-            # Input comes from a SplitDateTimeWidget, for example. So, it's two
-            # components: date and time.
-            warnings.warn(
-                'Using SplitDateTimeWidget with DateTimeField is deprecated. '
-                'Use SplitDateTimeField instead.',
-                RemovedInDjango19Warning, stacklevel=2)
-            if len(value) != 2:
-                raise ValidationError(self.error_messages['invalid'], code='invalid')
-            if value[0] in self.empty_values and value[1] in self.empty_values:
-                return None
-            value = '%s %s' % tuple(value)
         result = super(DateTimeField, self).to_python(value)
         return from_current_timezone(result)
 
@@ -548,6 +512,7 @@ class RegexField(CharField):
         error_message is an optional error message to use, if
         'Enter a valid value' is too generic for you.
         """
+        kwargs.setdefault('strip', False)
         # error_message is just kept for backwards compatibility:
         if error_message is not None:
             warnings.warn(
@@ -1222,20 +1187,6 @@ class SplitDateTimeField(MultiValueField):
         return None
 
 
-class IPAddressField(CharField):
-    default_validators = [validators.validate_ipv4_address]
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("IPAddressField has been deprecated. Use GenericIPAddressField instead.",
-                      RemovedInDjango19Warning)
-        super(IPAddressField, self).__init__(*args, **kwargs)
-
-    def to_python(self, value):
-        if value in self.empty_values:
-            return ''
-        return value.strip()
-
-
 class GenericIPAddressField(CharField):
     def __init__(self, protocol='both', unpack_ipv4=False, *args, **kwargs):
         self.unpack_ipv4 = unpack_ipv4
@@ -1254,9 +1205,11 @@ class GenericIPAddressField(CharField):
 class SlugField(CharField):
     default_validators = [validators.validate_slug]
 
-    def clean(self, value):
-        value = self.to_python(value).strip()
-        return super(SlugField, self).clean(value)
+    def __init__(self, *args, **kwargs):
+        self.allow_unicode = kwargs.pop('allow_unicode', False)
+        if self.allow_unicode:
+            self.default_validators = [validators.validate_unicode_slug]
+        super(SlugField, self).__init__(*args, **kwargs)
 
 
 class UUIDField(CharField):

@@ -5,26 +5,26 @@ import errno
 import json
 import os
 import posixpath
-import re
 import socket
 import sys
 import threading
 import unittest
 import warnings
 from collections import Counter
+from contextlib import contextmanager
 from copy import copy
 from functools import wraps
-from unittest import skipIf  # NOQA: Imported here for backward compatibility
 from unittest.util import safe_repr
 
 from django.apps import apps
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.files import locks
 from django.core.handlers.wsgi import WSGIHandler, get_path_info
 from django.core.management import call_command
 from django.core.management.color import no_style
-from django.core.management.commands import flush
+from django.core.management.sql import emit_post_migrate_signal
 from django.core.servers.basehttp import WSGIRequestHandler, WSGIServer
 from django.core.urlresolvers import clear_url_caches, set_urlconf
 from django.db import DEFAULT_DB_ALIAS, connection, connections, transaction
@@ -38,7 +38,10 @@ from django.test.utils import (
     override_settings,
 )
 from django.utils import six
-from django.utils.deprecation import RemovedInDjango110Warning
+from django.utils.decorators import classproperty
+from django.utils.deprecation import (
+    RemovedInDjango20Warning, RemovedInDjango110Warning,
+)
 from django.utils.encoding import force_text
 from django.utils.six.moves.urllib.parse import (
     unquote, urlparse, urlsplit, urlunsplit,
@@ -139,6 +142,19 @@ class _AssertTemplateNotUsedContext(_AssertTemplateUsedContext):
         return '%s was rendered.' % self.template_name
 
 
+class _CursorFailure(object):
+    def __init__(self, cls_name, wrapped):
+        self.cls_name = cls_name
+        self.wrapped = wrapped
+
+    def __call__(self):
+        raise AssertionError(
+            "Database queries aren't allowed in SimpleTestCase. "
+            "Either use TestCase or TransactionTestCase to ensure proper test isolation or "
+            "set %s.allow_database_queries to True to silence this failure." % self.cls_name
+        )
+
+
 class SimpleTestCase(unittest.TestCase):
 
     # The class we'll use for the test client self.client.
@@ -146,6 +162,10 @@ class SimpleTestCase(unittest.TestCase):
     client_class = Client
     _overridden_settings = None
     _modified_settings = None
+
+    # Tests shouldn't be allowed to query the database since
+    # this base class doesn't enforce any isolation.
+    allow_database_queries = False
 
     @classmethod
     def setUpClass(cls):
@@ -156,9 +176,17 @@ class SimpleTestCase(unittest.TestCase):
         if cls._modified_settings:
             cls._cls_modified_context = modify_settings(cls._modified_settings)
             cls._cls_modified_context.enable()
+        if not cls.allow_database_queries:
+            for alias in connections:
+                connection = connections[alias]
+                connection.cursor = _CursorFailure(cls.__name__, connection.cursor)
 
     @classmethod
     def tearDownClass(cls):
+        if not cls.allow_database_queries:
+            for alias in connections:
+                connection = connections[alias]
+                connection.cursor = connection.cursor.wrapped
         if hasattr(cls, '_cls_modified_context'):
             cls._cls_modified_context.disable()
             delattr(cls, '_cls_modified_context')
@@ -250,10 +278,14 @@ class SimpleTestCase(unittest.TestCase):
         TestClient to do a request (use fetch_redirect_response=False to check
         such links without fetching them).
         """
+        if host is not None:
+            warnings.warn(
+                "The host argument is deprecated and no longer used by assertRedirects",
+                RemovedInDjango20Warning, stacklevel=2
+            )
+
         if msg_prefix:
             msg_prefix += ": "
-
-        e_scheme, e_netloc, e_path, e_query, e_fragment = urlsplit(expected_url)
 
         if hasattr(response, 'redirect_chain'):
             # The request was a followed redirect
@@ -296,10 +328,18 @@ class SimpleTestCase(unittest.TestCase):
                     " response code was %d (expected %d)" %
                         (path, redirect_response.status_code, target_status_code))
 
-        e_scheme = e_scheme if e_scheme else scheme or 'http'
-        e_netloc = e_netloc if e_netloc else host or 'testserver'
-        expected_url = urlunsplit((e_scheme, e_netloc, e_path, e_query,
-            e_fragment))
+        if url != expected_url:
+            # For temporary backwards compatibility, try to compare with a relative url
+            e_scheme, e_netloc, e_path, e_query, e_fragment = urlsplit(expected_url)
+            relative_url = urlunsplit(('', '', e_path, e_query, e_fragment))
+            if url == relative_url:
+                warnings.warn(
+                    "assertRedirects had to strip the scheme and domain from the "
+                    "expected URL, as it was always added automatically to URLs "
+                    "before Django 1.9. Please update your expected URLs by "
+                    "removing the scheme and domain.",
+                    RemovedInDjango20Warning, stacklevel=2)
+                expected_url = relative_url
 
         self.assertEqual(url, expected_url,
             msg_prefix + "Response redirected to '%s', expected '%s'" %
@@ -565,10 +605,16 @@ class SimpleTestCase(unittest.TestCase):
             msg_prefix + "Template '%s' was used unexpectedly in rendering"
             " the response" % template_name)
 
+    @contextmanager
+    def _assert_raises_message_cm(self, expected_exception, expected_message):
+        with self.assertRaises(expected_exception) as cm:
+            yield cm
+        self.assertIn(expected_message, str(cm.exception))
+
     def assertRaisesMessage(self, expected_exception, expected_message, *args, **kwargs):
         """
-        Asserts that the message in a raised exception matches the passed
-        value.
+        Asserts that expected_message is found in the the message of a raised
+        exception.
 
         Args:
             expected_exception: Exception class expected to be raised.
@@ -576,14 +622,24 @@ class SimpleTestCase(unittest.TestCase):
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
         """
-        # callable_obj was a documented kwarg in older version of Django, but
-        # had to be removed due to a bad fix for http://bugs.python.org/issue24134
-        # inadvertently making its way into Python 2.7.10.
+        # callable_obj was a documented kwarg in Django 1.8 and older.
         callable_obj = kwargs.pop('callable_obj', None)
         if callable_obj:
-            args = (callable_obj,) + args
-        return six.assertRaisesRegex(self, expected_exception,
-                re.escape(expected_message), *args, **kwargs)
+            warnings.warn(
+                'The callable_obj kwarg is deprecated. Pass the callable '
+                'as a positional argument instead.', RemovedInDjango20Warning
+            )
+        elif len(args):
+            callable_obj = args[0]
+            args = args[1:]
+
+        cm = self._assert_raises_message_cm(expected_exception, expected_message)
+        # Assertion used in context manager fashion.
+        if callable_obj is None:
+            return cm
+        # Assertion was passed a callable.
+        with cm:
+            callable_obj(*args, **kwargs)
 
     def assertFieldOutput(self, fieldclass, valid, invalid, field_args=None,
             field_kwargs=None, empty_value=''):
@@ -599,7 +655,6 @@ class SimpleTestCase(unittest.TestCase):
             field_args: the args passed to instantiate the field
             field_kwargs: the kwargs passed to instantiate the field
             empty_value: the expected clean output for inputs in empty_values
-
         """
         if field_args is None:
             field_args = []
@@ -729,6 +784,13 @@ class SimpleTestCase(unittest.TestCase):
         else:
             if not result:
                 standardMsg = '%s != %s' % (safe_repr(xml1, True), safe_repr(xml2, True))
+                diff = ('\n' + '\n'.join(
+                    difflib.ndiff(
+                        six.text_type(xml1).splitlines(),
+                        six.text_type(xml2).splitlines(),
+                    )
+                ))
+                standardMsg = self._truncateMessage(standardMsg, diff)
                 self.fail(self._formatMessage(msg, standardMsg))
 
     def assertXMLNotEqual(self, xml1, xml2, msg=None):
@@ -766,6 +828,10 @@ class TransactionTestCase(SimpleTestCase):
     # This can be slow; this flag allows enabling on a per-case basis.
     serialized_rollback = False
 
+    # Since tests will be wrapped in a transaction, or serialized if they
+    # are not available, we allow queries to be run.
+    allow_database_queries = True
+
     def _pre_setup(self):
         """Performs any pre-test setup. This includes:
 
@@ -782,7 +848,7 @@ class TransactionTestCase(SimpleTestCase):
                                  value=self.available_apps,
                                  enter=True)
             for db_name in self._databases_names(include_mirrors=False):
-                flush.Command.emit_post_migrate(verbosity=0, interactive=False, database=db_name)
+                emit_post_migrate_signal(verbosity=0, interactive=False, db=db_name)
         try:
             self._fixture_setup()
         except Exception:
@@ -874,10 +940,19 @@ class TransactionTestCase(SimpleTestCase):
         # when flushing only a subset of the apps
         for db_name in self._databases_names(include_mirrors=False):
             # Flush the database
+            inhibit_post_migrate = (
+                self.available_apps is not None
+                or (
+                    # Inhibit the post_migrate signal when using serialized
+                    # rollback to avoid trying to recreate the serialized data.
+                    self.serialized_rollback and
+                    hasattr(connections[db_name], '_test_serialized_contents')
+                )
+            )
             call_command('flush', verbosity=0, interactive=False,
                          database=db_name, reset_sequences=False,
                          allow_cascade=self.available_apps is not None,
-                         inhibit_post_migrate=self.available_apps is not None)
+                         inhibit_post_migrate=inhibit_post_migrate)
 
     def assertQuerysetEqual(self, qs, values, transform=repr, ordered=True, msg=None):
         items = six.moves.map(transform, qs)
@@ -916,7 +991,7 @@ class TestCase(TransactionTestCase):
     Similar to TransactionTestCase, but uses `transaction.atomic()` to achieve
     test isolation.
 
-    In most situation, TestCase should be prefered to TransactionTestCase as
+    In most situations, TestCase should be preferred to TransactionTestCase as
     it allows faster execution. However, there are some situations where using
     TransactionTestCase might be necessary (e.g. testing some transactional
     behavior).
@@ -1046,6 +1121,16 @@ def skipUnlessDBFeature(*features):
     )
 
 
+def skipUnlessAnyDBFeature(*features):
+    """
+    Skip a test unless a database has any of the named features.
+    """
+    return _deferredSkip(
+        lambda: not any(getattr(connection.features, feature, False) for feature in features),
+        "Database doesn't support any of the feature(s): %s" % ", ".join(features)
+    )
+
+
 class QuietWSGIRequestHandler(WSGIRequestHandler):
     """
     Just a regular WSGIRequestHandler except it doesn't log to the standard
@@ -1167,8 +1252,7 @@ class LiveServerThread(threading.Thread):
             # one that is free to use for the WSGI server.
             for index, port in enumerate(self.possible_ports):
                 try:
-                    self.httpd = WSGIServer(
-                        (self.host, port), QuietWSGIRequestHandler)
+                    self.httpd = self._create_server(port)
                 except socket.error as e:
                     if (index + 1 < len(self.possible_ports) and
                             e.errno == errno.EADDRINUSE):
@@ -1192,6 +1276,9 @@ class LiveServerThread(threading.Thread):
             self.error = e
             self.is_ready.set()
 
+    def _create_server(self, port):
+        return WSGIServer((self.host, port), QuietWSGIRequestHandler)
+
     def terminate(self):
         if hasattr(self, 'httpd'):
             # Stop the WSGI server
@@ -1213,10 +1300,10 @@ class LiveServerTestCase(TransactionTestCase):
 
     static_handler = _StaticFilesHandler
 
-    @property
-    def live_server_url(self):
+    @classproperty
+    def live_server_url(cls):
         return 'http://%s:%s' % (
-            self.server_thread.host, self.server_thread.port)
+            cls.server_thread.host, cls.server_thread.port)
 
     @classmethod
     def setUpClass(cls):
@@ -1232,7 +1319,7 @@ class LiveServerTestCase(TransactionTestCase):
 
         # Launch the live server's thread
         specified_address = os.environ.get(
-            'DJANGO_LIVE_TEST_SERVER_ADDRESS', 'localhost:8081')
+            'DJANGO_LIVE_TEST_SERVER_ADDRESS', 'localhost:8081-8179')
 
         # The specified ports may be of the form '8000-8010,8080,9200-9300'
         # i.e. a comma-separated list of ports or ranges of ports, so we break
@@ -1254,9 +1341,7 @@ class LiveServerTestCase(TransactionTestCase):
         except Exception:
             msg = 'Invalid address ("%s") for live server.' % specified_address
             six.reraise(ImproperlyConfigured, ImproperlyConfigured(msg), sys.exc_info()[2])
-        cls.server_thread = LiveServerThread(host, possible_ports,
-                                             cls.static_handler,
-                                             connections_override=connections_override)
+        cls.server_thread = cls._create_server_thread(host, possible_ports, connections_override)
         cls.server_thread.daemon = True
         cls.server_thread.start()
 
@@ -1267,6 +1352,15 @@ class LiveServerTestCase(TransactionTestCase):
             # case of errors.
             cls._tearDownClassInternal()
             raise cls.server_thread.error
+
+    @classmethod
+    def _create_server_thread(cls, host, possible_ports, connections_override):
+        return LiveServerThread(
+            host,
+            possible_ports,
+            cls.static_handler,
+            connections_override=connections_override,
+        )
 
     @classmethod
     def _tearDownClassInternal(cls):
@@ -1286,3 +1380,31 @@ class LiveServerTestCase(TransactionTestCase):
     def tearDownClass(cls):
         cls._tearDownClassInternal()
         super(LiveServerTestCase, cls).tearDownClass()
+
+
+class SerializeMixin(object):
+    """
+    Mixin to enforce serialization of TestCases that share a common resource.
+
+    Define a common 'lockfile' for each set of TestCases to serialize. This
+    file must exist on the filesystem.
+
+    Place it early in the MRO in order to isolate setUpClass / tearDownClass.
+    """
+
+    lockfile = None
+
+    @classmethod
+    def setUpClass(cls):
+        if cls.lockfile is None:
+            raise ValueError(
+                "{}.lockfile isn't set. Set it to a unique value "
+                "in the base class.".format(cls.__name__))
+        cls._lockfile = open(cls.lockfile)
+        locks.lock(cls._lockfile, locks.LOCK_EX)
+        super(SerializeMixin, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(SerializeMixin, cls).tearDownClass()
+        cls._lockfile.close()

@@ -3,7 +3,6 @@
 Base classes for writing management commands (named commands which can
 be executed through ``django-admin`` or ``manage.py``).
 """
-
 from __future__ import unicode_literals
 
 import os
@@ -14,12 +13,9 @@ from optparse import OptionParser
 
 import django
 from django.core import checks
-from django.core.exceptions import ImproperlyConfigured
 from django.core.management.color import color_style, no_style
 from django.db import connections
-from django.utils.deprecation import (
-    RemovedInDjango19Warning, RemovedInDjango110Warning,
-)
+from django.utils.deprecation import RemovedInDjango110Warning
 from django.utils.encoding import force_str
 
 
@@ -34,7 +30,6 @@ class CommandError(Exception):
     result, raising this exception (with a sensible description of the
     error) is the preferred way to indicate that something has gone
     wrong in the execution of a command.
-
     """
     pass
 
@@ -75,7 +70,6 @@ def handle_default_options(options):
     Include any default options that all commands should accept here
     so that ManagementUtility can handle them before searching for
     user commands.
-
     """
     if options.settings:
         os.environ['DJANGO_SETTINGS_MODULE'] = options.settings
@@ -93,7 +87,7 @@ class OutputWrapper(object):
 
     @style_func.setter
     def style_func(self, style_func):
-        if style_func and hasattr(self._out, 'isatty') and self._out.isatty():
+        if style_func and self.isatty():
             self._style_func = style_func
         else:
             self._style_func = lambda x: x
@@ -105,6 +99,9 @@ class OutputWrapper(object):
 
     def __getattr__(self, name):
         return getattr(self._out, name)
+
+    def isatty(self):
+        return hasattr(self._out, 'isatty') and self._out.isatty()
 
     def write(self, msg, style_func=None, ending=None):
         ending = self.ending if ending is None else ending
@@ -192,18 +189,6 @@ class BaseCommand(object):
         is the list of application's configuration provided by the
         app registry.
 
-    ``requires_model_validation``
-        DEPRECATED - This value will only be used if requires_system_checks
-        has not been provided. Defining both ``requires_system_checks`` and
-        ``requires_model_validation`` will result in an error.
-
-        A boolean; if ``True``, validation of installed models will be
-        performed prior to executing the command. Default value is
-        ``True``. To validate an individual application's models
-        rather than all applications' models, call
-        ``self.validate(app_config)`` from ``handle()``, where ``app_config``
-        is the application's configuration provided by the app registry.
-
     ``leave_locale_alone``
         A boolean indicating whether the locale set in settings should be
         preserved during the execution of the command instead of translations
@@ -231,11 +216,7 @@ class BaseCommand(object):
     can_import_settings = True
     output_transaction = False  # Whether to wrap the output in a "BEGIN; COMMIT;"
     leave_locale_alone = False
-
-    # Uncomment the following line of code after deprecation plan for
-    # requires_model_validation comes to completion:
-    #
-    # requires_system_checks = True
+    requires_system_checks = True
 
     def __init__(self, stdout=None, stderr=None, no_color=False):
         self.stdout = OutputWrapper(stdout or sys.stdout)
@@ -246,39 +227,15 @@ class BaseCommand(object):
             self.style = color_style()
             self.stderr.style_func = self.style.ERROR
 
-        # `requires_model_validation` is deprecated in favor of
-        # `requires_system_checks`. If both options are present, an error is
-        # raised. Otherwise the present option is used. If none of them is
-        # defined, the default value (True) is used.
-        has_old_option = hasattr(self, 'requires_model_validation')
-        has_new_option = hasattr(self, 'requires_system_checks')
-
-        if has_old_option:
-            warnings.warn(
-                '"requires_model_validation" is deprecated '
-                'in favor of "requires_system_checks".',
-                RemovedInDjango19Warning)
-        if has_old_option and has_new_option:
-            raise ImproperlyConfigured(
-                'Command %s defines both "requires_model_validation" '
-                'and "requires_system_checks", which is illegal. Use only '
-                '"requires_system_checks".' % self.__class__.__name__)
-
-        self.requires_system_checks = (
-            self.requires_system_checks if has_new_option else
-            self.requires_model_validation if has_old_option else
-            True)
-
     @property
     def use_argparse(self):
         return not bool(self.option_list)
 
     def get_version(self):
         """
-        Return the Django version, which should be correct for all
-        built-in Django commands. User-supplied commands should
-        override this method.
-
+        Return the Django version, which should be correct for all built-in
+        Django commands. User-supplied commands can override this method to
+        return their own version.
         """
         return django.get_version()
 
@@ -286,7 +243,6 @@ class BaseCommand(object):
         """
         Return a brief description of how to use this command, by
         default from the attribute ``self.help``.
-
         """
         usage = '%%prog %s [options] %s' % (subcommand, self.args)
         if self.help:
@@ -298,7 +254,6 @@ class BaseCommand(object):
         """
         Create and return the ``ArgumentParser`` which will be used to
         parse the arguments to this command.
-
         """
         if not self.use_argparse:
             def store_as_int(option, opt_str, value, parser):
@@ -365,7 +320,6 @@ class BaseCommand(object):
         """
         Print the help message for this command, derived from
         ``self.usage()``.
-
         """
         parser = self.create_parser(prog_name, subcommand)
         parser.print_help()
@@ -408,8 +362,8 @@ class BaseCommand(object):
     def execute(self, *args, **options):
         """
         Try to execute this command, performing system checks if needed (as
-        controlled by attributes ``self.requires_system_checks`` and
-        ``self.requires_model_validation``, except if force-skipped).
+        controlled by the ``requires_system_checks`` attribute, except if
+        force-skipped).
         """
         if options.get('no_color'):
             self.style = no_style()
@@ -458,16 +412,6 @@ class BaseCommand(object):
             if saved_locale is not None:
                 translation.activate(saved_locale)
 
-    def validate(self, app_config=None, display_num_errors=False):
-        """ Deprecated. Delegates to ``check``."""
-
-        if app_config is None:
-            app_configs = None
-        else:
-            app_configs = [app_config]
-
-        return self.check(app_configs=app_configs, display_num_errors=display_num_errors)
-
     def check(self, app_configs=None, tags=None, display_num_errors=False,
               include_deployment_checks=False):
         """
@@ -489,8 +433,8 @@ class BaseCommand(object):
             debugs = [e for e in all_issues if e.level < checks.INFO and not e.is_silenced()]
             infos = [e for e in all_issues if checks.INFO <= e.level < checks.WARNING and not e.is_silenced()]
             warnings = [e for e in all_issues if checks.WARNING <= e.level < checks.ERROR and not e.is_silenced()]
-            errors = [e for e in all_issues if checks.ERROR <= e.level < checks.CRITICAL]
-            criticals = [e for e in all_issues if checks.CRITICAL <= e.level]
+            errors = [e for e in all_issues if checks.ERROR <= e.level < checks.CRITICAL and not e.is_silenced()]
+            criticals = [e for e in all_issues if checks.CRITICAL <= e.level and not e.is_silenced()]
             sorted_issues = [
                 (criticals, 'CRITICALS'),
                 (errors, 'ERRORS'),
@@ -539,7 +483,6 @@ class BaseCommand(object):
         """
         The actual logic of the command. Subclasses must implement
         this method.
-
         """
         raise NotImplementedError('subclasses of BaseCommand must provide a handle() method')
 
@@ -576,26 +519,9 @@ class AppCommand(BaseCommand):
         Perform the command's actions for app_config, an AppConfig instance
         corresponding to an application label given on the command line.
         """
-        try:
-            # During the deprecation path, keep delegating to handle_app if
-            # handle_app_config isn't implemented in a subclass.
-            handle_app = self.handle_app
-        except AttributeError:
-            # Keep only this exception when the deprecation completes.
-            raise NotImplementedError(
-                "Subclasses of AppCommand must provide"
-                "a handle_app_config() method.")
-        else:
-            warnings.warn(
-                "AppCommand.handle_app() is superseded by "
-                "AppCommand.handle_app_config().",
-                RemovedInDjango19Warning, stacklevel=2)
-            if app_config.models_module is None:
-                raise CommandError(
-                    "AppCommand cannot handle app '%s' in legacy mode "
-                    "because it doesn't have a models module."
-                    % app_config.label)
-            return handle_app(app_config.models_module, **options)
+        raise NotImplementedError(
+            "Subclasses of AppCommand must provide"
+            "a handle_app_config() method.")
 
 
 class LabelCommand(BaseCommand):
@@ -609,7 +535,6 @@ class LabelCommand(BaseCommand):
 
     If the arguments should be names of installed applications, use
     ``AppCommand`` instead.
-
     """
     label = 'label'
     missing_args_message = "Enter at least one %s." % label
@@ -629,7 +554,6 @@ class LabelCommand(BaseCommand):
         """
         Perform the command's actions for ``label``, which will be the
         string as given on the command line.
-
         """
         raise NotImplementedError('subclasses of LabelCommand must provide a handle_label() method')
 
@@ -643,7 +567,6 @@ class NoArgsCommand(BaseCommand):
     no arguments are passed to the command.
 
     Attempting to pass arguments will raise ``CommandError``.
-
     """
     args = ''
 
@@ -663,6 +586,5 @@ class NoArgsCommand(BaseCommand):
     def handle_noargs(self, **options):
         """
         Perform this command's actions.
-
         """
         raise NotImplementedError('subclasses of NoArgsCommand must provide a handle_noargs() method')

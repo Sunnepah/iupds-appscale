@@ -1,29 +1,9 @@
 import warnings
 
 from django.template import Library, defaulttags
-from django.utils.deprecation import (
-    RemovedInDjango19Warning, RemovedInDjango110Warning,
-)
+from django.utils.deprecation import RemovedInDjango110Warning
 
 register = Library()
-
-
-@register.tag
-def ssi(parser, token):
-    warnings.warn(
-        "Loading the `ssi` tag from the `future` library is deprecated and "
-        "will be removed in Django 1.9. Use the default `ssi` tag instead.",
-        RemovedInDjango19Warning)
-    return defaulttags.ssi(parser, token)
-
-
-@register.tag
-def url(parser, token):
-    warnings.warn(
-        "Loading the `url` tag from the `future` library is deprecated and "
-        "will be removed in Django 1.9. Use the default `url` tag instead.",
-        RemovedInDjango19Warning)
-    return defaulttags.url(parser, token)
 
 
 @register.tag
@@ -78,7 +58,6 @@ def firstof(parser, token):
     Or if only some variables should be escaped, you can use::
 
         {% firstof var1 var2|safe var3 "<strong>fallback value</strong>"|safe %}
-
     """
     warnings.warn(
         "Loading the `firstof` tag from the `future` library is deprecated and "

@@ -137,6 +137,12 @@ LANG_INFO = {
         'name': 'Argentinian Spanish',
         'name_local': 'español de Argentina',
     },
+    'es-co': {
+        'bidi': False,
+        'code': 'es-co',
+        'name': 'Colombian Spanish',
+        'name_local': 'español de Colombia',
+    },
     'es-mx': {
         'bidi': False,
         'code': 'es-mx',
@@ -196,6 +202,12 @@ LANG_INFO = {
         'code': 'ga',
         'name': 'Irish',
         'name_local': 'Gaeilge',
+    },
+    'gd': {
+        'bidi': False,
+        'code': 'gd',
+        'name': 'Scottish Gaelic',
+        'name_local': 'Gàidhlig',
     },
     'gl': {
         'bidi': False,
@@ -511,10 +523,6 @@ LANG_INFO = {
     },
     'zh-cn': {
         'fallback': ['zh-hans'],
-        'bidi': False,
-        'code': 'zh-cn',
-        'name': 'Simplified Chinese',
-        'name_local': '简体中文',
     },
     'zh-hans': {
         'bidi': False,
@@ -542,9 +550,5 @@ LANG_INFO = {
     },
     'zh-tw': {
         'fallback': ['zh-hant'],
-        'bidi': False,
-        'code': 'zh-tw',
-        'name': 'Traditional Chinese',
-        'name_local': '繁體中文',
     },
 }

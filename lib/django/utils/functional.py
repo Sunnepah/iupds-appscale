@@ -1,11 +1,8 @@
 import copy
 import operator
-import sys
-import warnings
-from functools import wraps
+from functools import total_ordering, wraps
 
 from django.utils import six
-from django.utils.deprecation import RemovedInDjango19Warning
 
 
 # You can't trivially replace this with `functools.partial` because this binds
@@ -15,29 +12,6 @@ def curry(_curried_func, *args, **kwargs):
     def _curried(*moreargs, **morekwargs):
         return _curried_func(*(args + moreargs), **dict(kwargs, **morekwargs))
     return _curried
-
-
-def memoize(func, cache, num_args):
-    """
-    Wrap a function so that results for any argument tuple are stored in
-    'cache'. Note that the args to the function must be usable as dictionary
-    keys.
-
-    Only the first num_args are considered when creating the key.
-    """
-    warnings.warn("memoize wrapper is deprecated and will be removed in "
-                  "Django 1.9. Use django.utils.lru_cache instead.",
-                  RemovedInDjango19Warning, stacklevel=2)
-
-    @wraps(func)
-    def wrapper(*args):
-        mem_args = args[:num_args]
-        if mem_args in cache:
-            return cache[mem_args]
-        result = func(*args)
-        cache[mem_args] = result
-        return result
-    return wrapper
 
 
 class cached_property(object):
@@ -153,6 +127,11 @@ def lazy(func, *resultclasses):
             else:
                 return func(*self.__args, **self.__kw)
 
+        def __str__(self):
+            # object defines __str__(), so __prepare_class__() won't overload
+            # a __str__() method from the proxied class.
+            return str(self.__cast())
+
         def __ne__(self, other):
             if isinstance(other, Promise):
                 other = other.__cast()
@@ -208,7 +187,7 @@ def allow_lazy(func, *resultclasses):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        for arg in list(args) + list(six.itervalues(kwargs)):
+        for arg in list(args) + list(kwargs.values()):
             if isinstance(arg, Promise):
                 break
         else:
@@ -320,11 +299,11 @@ class LazyObject(object):
     __ne__ = new_method_proxy(operator.ne)
     __hash__ = new_method_proxy(hash)
 
-    # Dictionary methods support
+    # List/Tuple/Dictionary methods support
     __getitem__ = new_method_proxy(operator.getitem)
     __setitem__ = new_method_proxy(operator.setitem)
     __delitem__ = new_method_proxy(operator.delitem)
-
+    __iter__ = new_method_proxy(iter)
     __len__ = new_method_proxy(len)
     __contains__ = new_method_proxy(operator.contains)
 
@@ -336,10 +315,6 @@ def unpickle_lazyobject(wrapped):
     """
     return wrapped
 unpickle_lazyobject.__safe_for_unpickling__ = True
-
-
-# Workaround for http://bugs.python.org/issue12370
-_super = super
 
 
 class SimpleLazyObject(LazyObject):
@@ -359,7 +334,7 @@ class SimpleLazyObject(LazyObject):
         value.
         """
         self.__dict__['_setupfunc'] = func
-        _super(SimpleLazyObject, self).__init__()
+        super(SimpleLazyObject, self).__init__()
 
     def _setup(self):
         self._wrapped = self._setupfunc()
@@ -416,36 +391,3 @@ def partition(predicate, values):
     for item in values:
         results[predicate(item)].append(item)
     return results
-
-if sys.version_info >= (2, 7, 2):
-    from functools import total_ordering
-else:
-    # For Python < 2.7.2. total_ordering in versions prior to 2.7.2 is buggy.
-    # See http://bugs.python.org/issue10042 for details. For these versions use
-    # code borrowed from Python 2.7.3.
-    def total_ordering(cls):
-        """Class decorator that fills in missing ordering methods"""
-        convert = {
-            '__lt__': [('__gt__', lambda self, other: not (self < other or self == other)),
-                       ('__le__', lambda self, other: self < other or self == other),
-                       ('__ge__', lambda self, other: not self < other)],
-            '__le__': [('__ge__', lambda self, other: not self <= other or self == other),
-                       ('__lt__', lambda self, other: self <= other and not self == other),
-                       ('__gt__', lambda self, other: not self <= other)],
-            '__gt__': [('__lt__', lambda self, other: not (self > other or self == other)),
-                       ('__ge__', lambda self, other: self > other or self == other),
-                       ('__le__', lambda self, other: not self > other)],
-            '__ge__': [('__le__', lambda self, other: (not self >= other) or self == other),
-                       ('__gt__', lambda self, other: self >= other and not self == other),
-                       ('__lt__', lambda self, other: not self >= other)]
-        }
-        roots = set(dir(cls)) & set(convert)
-        if not roots:
-            raise ValueError('must define at least one ordering operation: < > <= >=')
-        root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
-        for opname, opfunc in convert[root]:
-            if opname not in roots:
-                opfunc.__name__ = opname
-                opfunc.__doc__ = getattr(int, opname).__doc__
-                setattr(cls, opname, opfunc)
-        return cls

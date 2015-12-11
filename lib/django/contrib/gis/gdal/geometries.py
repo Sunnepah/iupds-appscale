@@ -59,8 +59,6 @@ from django.utils.six.moves import range
 #  http://www.gdal.org/ogr/ogr__api_8h.html
 #
 # The OGR_G_* routines are relevant here.
-
-
 class OGRGeometry(GDALBase):
     "Generally encapsulates an OGR geometry."
 

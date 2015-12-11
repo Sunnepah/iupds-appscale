@@ -2,12 +2,10 @@ from __future__ import unicode_literals
 
 import re
 import unicodedata
-import warnings
 from gzip import GzipFile
 from io import BytesIO
 
 from django.utils import six
-from django.utils.deprecation import RemovedInDjango19Warning
 from django.utils.encoding import force_text
 from django.utils.functional import SimpleLazyObject, allow_lazy
 from django.utils.safestring import SafeText, mark_safe
@@ -331,33 +329,6 @@ def compress_sequence(sequence):
     zfile.close()
     yield buf.read()
 
-ustring_re = re.compile("([\u0080-\uffff])")
-
-
-def javascript_quote(s, quote_double_quotes=False):
-    msg = (
-        "django.utils.text.javascript_quote() is deprecated. "
-        "Use django.utils.html.escapejs() instead."
-    )
-    warnings.warn(msg, RemovedInDjango19Warning, stacklevel=2)
-
-    def fix(match):
-        return "\\u%04x" % ord(match.group(1))
-
-    if type(s) == bytes:
-        s = s.decode('utf-8')
-    elif type(s) != six.text_type:
-        raise TypeError(s)
-    s = s.replace('\\', '\\\\')
-    s = s.replace('\r', '\\r')
-    s = s.replace('\n', '\\n')
-    s = s.replace('\t', '\\t')
-    s = s.replace("'", "\\'")
-    s = s.replace('</', '<\\/')
-    if quote_double_quotes:
-        s = s.replace('"', '&quot;')
-    return ustring_re.sub(fix, s)
-javascript_quote = allow_lazy(javascript_quote, six.text_type)
 
 # Expression to match some_token and some_token="with spaces" (and similarly
 # for single-quoted strings).
@@ -439,13 +410,17 @@ def unescape_string_literal(s):
 unescape_string_literal = allow_lazy(unescape_string_literal)
 
 
-def slugify(value):
+def slugify(value, allow_unicode=False):
     """
-    Converts to ASCII. Converts spaces to hyphens. Removes characters that
-    aren't alphanumerics, underscores, or hyphens. Converts to lowercase.
-    Also strips leading and trailing whitespace.
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces to hyphens.
+    Remove characters that aren't alphanumerics, underscores, or hyphens.
+    Convert to lowercase. Also strip leading and trailing whitespace.
     """
     value = force_text(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+        value = re.sub('[^\w\s-]', '', value, flags=re.U).strip().lower()
+        return mark_safe(re.sub('[-\s]+', '-', value, flags=re.U))
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub('[^\w\s-]', '', value).strip().lower()
     return mark_safe(re.sub('[-\s]+', '-', value))

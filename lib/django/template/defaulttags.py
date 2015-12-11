@@ -9,22 +9,23 @@ from datetime import datetime
 from itertools import cycle as itertools_cycle, groupby
 
 from django.conf import settings
-from django.template.base import (
-    BLOCK_TAG_END, BLOCK_TAG_START, COMMENT_TAG_END, COMMENT_TAG_START,
-    SINGLE_BRACE_END, SINGLE_BRACE_START, VARIABLE_ATTRIBUTE_SEPARATOR,
-    VARIABLE_TAG_END, VARIABLE_TAG_START, Context, InvalidTemplateLibrary,
-    Library, Node, NodeList, Template, TemplateSyntaxError,
-    VariableDoesNotExist, get_library, kwarg_re, render_value_in_context,
-    token_kwargs,
-)
-from django.template.defaultfilters import date
-from django.template.smartif import IfParser, Literal
 from django.utils import six, timezone
 from django.utils.deprecation import RemovedInDjango110Warning
 from django.utils.encoding import force_text, smart_text
-from django.utils.html import format_html
+from django.utils.html import conditional_escape, format_html
 from django.utils.lorem_ipsum import paragraphs, words
 from django.utils.safestring import mark_safe
+
+from .base import (
+    BLOCK_TAG_END, BLOCK_TAG_START, COMMENT_TAG_END, COMMENT_TAG_START,
+    SINGLE_BRACE_END, SINGLE_BRACE_START, VARIABLE_ATTRIBUTE_SEPARATOR,
+    VARIABLE_TAG_END, VARIABLE_TAG_START, Context, Node, NodeList, Template,
+    TemplateSyntaxError, VariableDoesNotExist, kwarg_re,
+    render_value_in_context, token_kwargs,
+)
+from .defaultfilters import date
+from .library import Library
+from .smartif import IfParser, Literal
 
 register = Library()
 
@@ -52,7 +53,7 @@ class CommentNode(Node):
 
 class CsrfTokenNode(Node):
     def render(self, context):
-        csrf_token = context.get('csrf_token', None)
+        csrf_token = context.get('csrf_token')
         if csrf_token:
             if csrf_token == 'NOTPROVIDED':
                 return format_html("")
@@ -110,14 +111,19 @@ class FilterNode(Node):
 
 
 class FirstOfNode(Node):
-    def __init__(self, variables):
+    def __init__(self, variables, asvar=None):
         self.vars = variables
+        self.asvar = asvar
 
     def render(self, context):
         for var in self.vars:
             value = var.resolve(context, True)
             if value:
-                return render_value_in_context(value, context)
+                first = render_value_in_context(value, context)
+                if self.asvar:
+                    context[self.asvar] = first
+                    return ''
+                return first
         return ''
 
 
@@ -209,19 +215,10 @@ class ForNode(Node):
                         context.update(unpacked_vars)
                 else:
                     context[self.loopvars[0]] = item
-                # In debug mode provide the source of the node which raised
-                # the exception
-                if context.template.engine.debug:
-                    for node in self.nodelist_loop:
-                        try:
-                            nodelist.append(node.render(context))
-                        except Exception as e:
-                            if not hasattr(e, 'django_template_source'):
-                                e.django_template_source = node.source
-                            raise
-                else:
-                    for node in self.nodelist_loop:
-                        nodelist.append(node.render(context))
+
+                for node in self.nodelist_loop:
+                    nodelist.append(node.render_annotated(context))
+
                 if pop_context:
                     # The loop variables were pushed on to the context so pop them
                     # off again. This is necessary because the tag lets the length
@@ -472,17 +469,26 @@ class URLNode(Node):
     def render(self, context):
         from django.core.urlresolvers import reverse, NoReverseMatch
         args = [arg.resolve(context) for arg in self.args]
-        kwargs = dict((smart_text(k, 'ascii'), v.resolve(context))
-                      for k, v in self.kwargs.items())
+        kwargs = {
+            smart_text(k, 'ascii'): v.resolve(context)
+            for k, v in self.kwargs.items()
+        }
 
         view_name = self.view_name.resolve(context)
 
         try:
             current_app = context.request.current_app
         except AttributeError:
-            # Change the fallback value to None when the deprecation path for
+            # Leave only the else block when the deprecation path for
             # Context.current_app completes in Django 1.10.
-            current_app = context.current_app
+            # Can also remove the Context.is_current_app_set property.
+            if context.is_current_app_set:
+                current_app = context.current_app
+            else:
+                try:
+                    current_app = context.request.resolver_match.namespace
+                except AttributeError:
+                    current_app = None
 
         # Try to look up the URL twice: once given the view name, and again
         # relative to what we guess is the "main" app. If they both fail,
@@ -513,6 +519,8 @@ class URLNode(Node):
             context[self.asvar] = url
             return ''
         else:
+            if context.autoescape:
+                url = conditional_escape(url)
             return url
 
 
@@ -634,7 +642,6 @@ def cycle(parser, token):
             {% cycle 'row1' 'row2' as rowcolors silent %}
             <tr class="{{ rowcolors }}">{% include "subtemplate.html " %}</tr>
         {% endfor %}
-
     """
     # Note: This returns the exact same node on each {% cycle name %} call;
     # that is, the node object returned from {% cycle a b c as name %} and the
@@ -652,6 +659,10 @@ def cycle(parser, token):
         raise TemplateSyntaxError("'cycle' tag requires at least two arguments")
 
     if ',' in args[1]:
+        warnings.warn(
+            "The old {% cycle %} syntax with comma-separated arguments is deprecated.",
+            RemovedInDjango110Warning,
+        )
         # Backwards compatibility: {% cycle a,b %} or {% cycle a,b as foo %}
         # case.
         args[1:2] = ['"%s"' % arg for arg in args[1].split(",")]
@@ -751,7 +762,7 @@ def firstof(parser, token):
 
     Sample usage::
 
-        {% firstof var1 var2 var3 %}
+        {% firstof var1 var2 var3 as myvar %}
 
     This is equivalent to::
 
@@ -779,12 +790,16 @@ def firstof(parser, token):
     Or if only some variables should be escaped, you can use::
 
         {% firstof var1 var2|safe var3 "<strong>fallback value</strong>"|safe %}
-
     """
     bits = token.split_contents()[1:]
+    asvar = None
     if len(bits) < 1:
         raise TemplateSyntaxError("'firstof' statement requires at least one argument")
-    return FirstOfNode([parser.compile_filter(bit) for bit in bits])
+
+    if len(bits) >= 2 and bits[-2] == 'as':
+        asvar = bits[-1]
+        bits = bits[:-2]
+    return FirstOfNode([parser.compile_filter(bit) for bit in bits], asvar)
 
 
 @register.tag('for')
@@ -849,7 +864,6 @@ def do_for(parser, token):
         ``forloop.parentloop``      For nested loops, this is the loop "above" the
                                     current one
         ==========================  ================================================
-
     """
     bits = token.split_contents()
     if len(bits) < 4:
@@ -1113,10 +1127,43 @@ def ssi(parser, token):
     return SsiNode(filepath, parsed)
 
 
+def find_library(parser, name):
+    try:
+        return parser.libraries[name]
+    except KeyError:
+        raise TemplateSyntaxError(
+            "'%s' is not a registered tag library. Must be one of:\n%s" % (
+                name, "\n".join(sorted(parser.libraries.keys())),
+            ),
+        )
+
+
+def load_from_library(library, label, names):
+    """
+    Return a subset of tags and filters from a library.
+    """
+    subset = Library()
+    for name in names:
+        found = False
+        if name in library.tags:
+            found = True
+            subset.tags[name] = library.tags[name]
+        if name in library.filters:
+            found = True
+            subset.filters[name] = library.filters[name]
+        if found is False:
+            raise TemplateSyntaxError(
+                "'%s' is not a valid tag or filter in tag library '%s'" % (
+                    name, label,
+                ),
+            )
+    return subset
+
+
 @register.tag
 def load(parser, token):
     """
-    Loads a custom template tag set.
+    Loads a custom template tag library into the parser.
 
     For example, to load the template tags in
     ``django/templatetags/news/photos.py``::
@@ -1127,40 +1174,20 @@ def load(parser, token):
     a library::
 
         {% load byline from news %}
-
     """
     # token.split_contents() isn't useful here because this tag doesn't accept variable as arguments
     bits = token.contents.split()
     if len(bits) >= 4 and bits[-2] == "from":
-        try:
-            taglib = bits[-1]
-            lib = get_library(taglib)
-        except InvalidTemplateLibrary as e:
-            raise TemplateSyntaxError("'%s' is not a valid tag library: %s" %
-                                      (taglib, e))
-        else:
-            temp_lib = Library()
-            for name in bits[1:-2]:
-                if name in lib.tags:
-                    temp_lib.tags[name] = lib.tags[name]
-                    # a name could be a tag *and* a filter, so check for both
-                    if name in lib.filters:
-                        temp_lib.filters[name] = lib.filters[name]
-                elif name in lib.filters:
-                    temp_lib.filters[name] = lib.filters[name]
-                else:
-                    raise TemplateSyntaxError("'%s' is not a valid tag or filter in tag library '%s'" %
-                                              (name, taglib))
-            parser.add_library(temp_lib)
+        # from syntax is used; load individual tags from the library
+        name = bits[-1]
+        lib = find_library(parser, name)
+        subset = load_from_library(lib, name, bits[1:-2])
+        parser.add_library(subset)
     else:
-        for taglib in bits[1:]:
-            # add the library to the parser
-            try:
-                lib = get_library(taglib)
-                parser.add_library(lib)
-            except InvalidTemplateLibrary as e:
-                raise TemplateSyntaxError("'%s' is not a valid tag library: %s" %
-                                          (taglib, e))
+        # one or more libraries are specified; load and add them to the parser
+        for name in bits[1:]:
+            lib = find_library(parser, name)
+            parser.add_library(lib)
     return LoadNode()
 
 
@@ -1279,7 +1306,6 @@ def regroup(parser, token):
     before using it, i.e.::
 
         {% regroup people|dictsort:"gender" by gender as grouped %}
-
     """
     bits = token.split_contents()
     if len(bits) != 6:
@@ -1431,7 +1457,6 @@ def url(parser, token):
         {% with url_name="client-detail-view" %}
         {% url url_name client.id %}
         {% endwith %}
-
     """
     bits = token.split_contents()
     if len(bits) < 2:

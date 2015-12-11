@@ -6,9 +6,11 @@ from importlib import import_module
 
 from django.apps import apps
 from django.conf import settings
-from django.db.migrations.graph import MigrationGraph, NodeNotFoundError
+from django.db.migrations.graph import MigrationGraph
 from django.db.migrations.recorder import MigrationRecorder
 from django.utils import six
+
+from .exceptions import AmbiguityError, BadMigrationError, NodeNotFoundError
 
 MIGRATIONS_MODULE_NAME = 'migrations'
 
@@ -64,6 +66,9 @@ class MigrationLoader(object):
         for app_config in apps.get_app_configs():
             # Get the migrations module directory
             module_name = self.migrations_module(app_config.label)
+            if module_name is None:
+                self.unmigrated_apps.add(app_config.label)
+                continue
             was_loaded = module_name in sys.modules
             try:
                 module = import_module(module_name)
@@ -96,27 +101,16 @@ class MigrationLoader(object):
                     if import_name[0] not in "_.~":
                         migration_names.add(import_name)
             # Load them
-            south_style_migrations = False
             for migration_name in migration_names:
-                try:
-                    migration_module = import_module("%s.%s" % (module_name, migration_name))
-                except ImportError as e:
-                    # Ignore South import errors, as we're triggering them
-                    if "south" in str(e).lower():
-                        south_style_migrations = True
-                        break
-                    raise
+                migration_module = import_module("%s.%s" % (module_name, migration_name))
                 if not hasattr(migration_module, "Migration"):
                     raise BadMigrationError(
                         "Migration %s in app %s has no Migration class" % (migration_name, app_config.label)
                     )
-                # Ignore South-style migrations
-                if hasattr(migration_module.Migration, "forwards"):
-                    south_style_migrations = True
-                    break
-                self.disk_migrations[app_config.label, migration_name] = migration_module.Migration(migration_name, app_config.label)
-            if south_style_migrations:
-                self.unmigrated_apps.add(app_config.label)
+                self.disk_migrations[app_config.label, migration_name] = migration_module.Migration(
+                    migration_name,
+                    app_config.label,
+                )
 
     def get_migration(self, app_label, name_prefix):
         "Gets the migration exactly named, or raises `graph.NodeNotFoundError`"
@@ -342,17 +336,3 @@ class MigrationLoader(object):
         See graph.make_state for the meaning of "nodes" and "at_end"
         """
         return self.graph.make_state(nodes=nodes, at_end=at_end, real_apps=list(self.unmigrated_apps))
-
-
-class BadMigrationError(Exception):
-    """
-    Raised when there's a bad migration (unreadable/bad format/etc.)
-    """
-    pass
-
-
-class AmbiguityError(Exception):
-    """
-    Raised when more than one migration matches a name prefix
-    """
-    pass

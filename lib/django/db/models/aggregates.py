@@ -15,24 +15,23 @@ class Aggregate(Func):
     name = None
 
     def resolve_expression(self, query=None, allow_joins=True, reuse=None, summarize=False, for_save=False):
-        assert len(self.source_expressions) == 1
         # Aggregates are not allowed in UPDATE queries, so ignore for_save
         c = super(Aggregate, self).resolve_expression(query, allow_joins, reuse, summarize)
-        if c.source_expressions[0].contains_aggregate and not summarize:
-            name = self.source_expressions[0].name
-            raise FieldError("Cannot compute %s('%s'): '%s' is an aggregate" % (
-                c.name, name, name))
+        if not summarize:
+            expressions = c.get_source_expressions()
+            for index, expr in enumerate(expressions):
+                if expr.contains_aggregate:
+                    before_resolved = self.get_source_expressions()[index]
+                    name = before_resolved.name if hasattr(before_resolved, 'name') else repr(before_resolved)
+                    raise FieldError("Cannot compute %s('%s'): '%s' is an aggregate" % (c.name, name, name))
         c._patch_aggregate(query)  # backward-compatibility support
         return c
 
     @property
-    def input_field(self):
-        return self.source_expressions[0]
-
-    @property
     def default_alias(self):
-        if hasattr(self.source_expressions[0], 'name'):
-            return '%s__%s' % (self.source_expressions[0].name, self.name.lower())
+        expressions = self.get_source_expressions()
+        if len(expressions) == 1 and hasattr(expressions[0], 'name'):
+            return '%s__%s' % (expressions[0].name, self.name.lower())
         raise TypeError("Complex expressions require an alias")
 
     def get_group_by_cols(self):
@@ -75,12 +74,17 @@ class Avg(Aggregate):
     name = 'Avg'
 
     def __init__(self, expression, **extra):
-        super(Avg, self).__init__(expression, output_field=FloatField(), **extra)
+        output_field = extra.pop('output_field', FloatField())
+        super(Avg, self).__init__(expression, output_field=output_field, **extra)
 
-    def convert_value(self, value, expression, connection, context):
-        if value is None:
-            return value
-        return float(value)
+    def as_oracle(self, compiler, connection):
+        if self.output_field.get_internal_type() == 'DurationField':
+            expression = self.get_source_expressions()[0]
+            from django.db.backends.oracle.functions import IntervalToSeconds, SecondsToInterval
+            return compiler.compile(
+                SecondsToInterval(Avg(IntervalToSeconds(expression)))
+            )
+        return super(Avg, self).as_sql(compiler, connection)
 
 
 class Count(Aggregate):
@@ -140,6 +144,15 @@ class StdDev(Aggregate):
 class Sum(Aggregate):
     function = 'SUM'
     name = 'Sum'
+
+    def as_oracle(self, compiler, connection):
+        if self.output_field.get_internal_type() == 'DurationField':
+            expression = self.get_source_expressions()[0]
+            from django.db.backends.oracle.functions import IntervalToSeconds, SecondsToInterval
+            return compiler.compile(
+                SecondsToInterval(Sum(IntervalToSeconds(expression)))
+            )
+        return super(Sum, self).as_sql(compiler, connection)
 
 
 class Variance(Aggregate):

@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 
 import re
-import sys
 import warnings
 
 from django.utils import six
@@ -27,7 +26,7 @@ WRAPPING_PUNCTUATION = [('(', ')'), ('<', '>'), ('[', ']'), ('&lt;', '&gt;'), ('
 DOTS = ['&middot;', '*', '\u2022', '&#149;', '&bull;', '&#8226;']
 
 unencoded_ampersands_re = re.compile(r'&(?!(\w+|#\d+);)')
-word_split_re = re.compile(r'(\s+)')
+word_split_re = re.compile(r'''([\s<>"']+)''')
 simple_url_re = re.compile(r'^https?://\[?\w', re.IGNORECASE)
 simple_url_2_re = re.compile(r'^www\.|^(?!http)\w[^@]+\.(com|edu|gov|int|mil|net|org)($|/.*)$', re.IGNORECASE)
 simple_email_re = re.compile(r'^\S+@\S+\.\S+$')
@@ -115,7 +114,6 @@ def format_html_join(sep, format_string, args_generator):
 
       format_html_join('\n', "<li>{} {}</li>", ((u.first_name, u.last_name)
                                                   for u in users))
-
     """
     return mark_safe(conditional_escape(sep).join(
         format_html(format_string, *tuple(args))
@@ -136,12 +134,7 @@ linebreaks = allow_lazy(linebreaks, six.text_type)
 
 class MLStripper(HTMLParser):
     def __init__(self):
-        # The strict parameter was added in Python 3.2 with a default of True.
-        # The default changed to False in Python 3.3 and was deprecated.
-        if sys.version_info[:2] == (3, 2):
-            HTMLParser.__init__(self, strict=False)
-        else:
-            HTMLParser.__init__(self)
+        HTMLParser.__init__(self)
         self.reset()
         self.fed = []
 
@@ -169,9 +162,7 @@ def _strip_once(value):
         return value
     try:
         s.close()
-    except (HTMLParseError, UnboundLocalError):
-        # UnboundLocalError because of http://bugs.python.org/issue17802
-        # on Python 3.2, triggered by strict=False mode of HTMLParser
+    except HTMLParseError:
         return s.get_data() + s.rawdata
     else:
         return s.get_data()
