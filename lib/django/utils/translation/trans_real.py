@@ -17,7 +17,6 @@ from django.core.signals import setting_changed
 from django.dispatch import receiver
 from django.utils import lru_cache, six
 from django.utils._os import upath
-from django.utils.deprecation import RemovedInDjango19Warning
 from django.utils.encoding import force_text
 from django.utils.safestring import SafeData, mark_safe
 from django.utils.six import StringIO
@@ -44,15 +43,12 @@ accept_language_re = re.compile(r'''
         (?:\s*,\s*|$)                                 # Multiple accepts per header.
         ''', re.VERBOSE)
 
-language_code_re = re.compile(r'^[a-z]{1,8}(?:-[a-z0-9]{1,8})*$', re.IGNORECASE)
+language_code_re = re.compile(
+    r'^[a-z]{1,8}(?:-[a-z0-9]{1,8})*(?:@[a-z0-9]{1,20})?$',
+    re.IGNORECASE
+)
 
-language_code_prefix_re = re.compile(r'^/([\w-]+)(/|$)')
-
-# some browsers use deprecated locales. refs #18419
-_DJANGO_DEPRECATED_LOCALES = {
-    'zh-cn': 'zh-hans',
-    'zh-tw': 'zh-hant',
-}
+language_code_prefix_re = re.compile(r'^/([\w@-]+)(/|$)')
 
 
 @receiver(setting_changed)
@@ -107,6 +103,7 @@ class DjangoTranslation(gettext_module.GNUTranslations):
     def __init__(self, language):
         """Create a GNUTranslations() using many locale directories"""
         gettext_module.GNUTranslations.__init__(self)
+        self.set_output_charset('utf-8')  # For Python 2 gettext() (#25720)
 
         self.__language = language
         self.__to_language = to_language(language)
@@ -214,11 +211,6 @@ def activate(language):
     """
     if not language:
         return
-    if language in _DJANGO_DEPRECATED_LOCALES:
-        msg = ("The use of the language code '%s' is deprecated. "
-               "Please use the '%s' translation instead.")
-        warnings.warn(msg % (language, _DJANGO_DEPRECATED_LOCALES[language]),
-                      RemovedInDjango19Warning, stacklevel=2)
     _active.value = translation(language)
 
 
@@ -538,12 +530,18 @@ def blankout(src, char):
 
 
 context_re = re.compile(r"""^\s+.*context\s+((?:"[^"]*?")|(?:'[^']*?'))\s*""")
-inline_re = re.compile(r"""^\s*trans\s+((?:"[^"]*?")|(?:'[^']*?'))(\s+.*context\s+((?:"[^"]*?")|(?:'[^']*?')))?\s*""")
+inline_re = re.compile(
+    # Match the trans 'some text' part
+    r"""^\s*trans\s+((?:"[^"]*?")|(?:'[^']*?'))"""
+    # Match and ignore optional filters
+    r"""(?:\s*\|\s*[^\s:]+(?::(?:[^\s'":]+|(?:"[^"]*?")|(?:'[^']*?')))?)*"""
+    # Match the optional context part
+    r"""(\s+.*context\s+((?:"[^"]*?")|(?:'[^']*?')))?\s*"""
+)
 block_re = re.compile(r"""^\s*blocktrans(\s+.*context\s+((?:"[^"]*?")|(?:'[^']*?')))?(?:\s+|$)""")
 endblock_re = re.compile(r"""^\s*endblocktrans$""")
 plural_re = re.compile(r"""^\s*plural$""")
 constant_re = re.compile(r"""_\(((?:".*?")|(?:'.*?'))\)""")
-one_percent_re = re.compile(r"""(?<!%)%(?!%)""")
 
 
 def templatize(src, origin=None):
@@ -573,7 +571,7 @@ def templatize(src, origin=None):
             message = trim_whitespace(message)
         return message
 
-    for t in Lexer(src, origin).tokenize():
+    for t in Lexer(src).tokenize():
         if incomment:
             if t.token_type == TOKEN_BLOCK and t.contents == 'endcomment':
                 content = ''.join(comment)
@@ -640,7 +638,7 @@ def templatize(src, origin=None):
                 else:
                     singular.append('%%(%s)s' % t.contents)
             elif t.token_type == TOKEN_TEXT:
-                contents = one_percent_re.sub('%%', t.contents)
+                contents = t.contents.replace('%', '%%')
                 if inplural:
                     plural.append(contents)
                 else:
@@ -676,7 +674,7 @@ def templatize(src, origin=None):
                         g = g.strip('"')
                     elif g[0] == "'":
                         g = g.strip("'")
-                    g = one_percent_re.sub('%%', g)
+                    g = g.replace('%', '%%')
                     if imatch.group(2):
                         # A context is provided
                         context_match = context_re.match(imatch.group(2))

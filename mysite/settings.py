@@ -89,14 +89,15 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
+# [START db_setup]
 import os
 if os.getenv('SERVER_SOFTWARE', '').startswith('Google App Engine'):
     # Running on production App Engine, so use a Google Cloud SQL database.
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'HOST': '/cloudsql/cloud-monitoring-external:library',
-            'NAME': 'polls',
+            'HOST': '/cloudsql/<your-cloud-sql-instance>',
+            'NAME': '<your-database-name>',
             'USER': 'root',
         }
     }
@@ -111,7 +112,7 @@ else:
             'PORT': '3306',
         }
     }
-
+# [END db_setup]
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/

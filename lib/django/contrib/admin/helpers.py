@@ -14,7 +14,9 @@ from django.db.models.fields.related import ManyToManyRel
 from django.forms.utils import flatatt
 from django.template.defaultfilters import capfirst, linebreaksbr
 from django.utils import six
-from django.utils.deprecation import RemovedInDjango110Warning
+from django.utils.deprecation import (
+    RemovedInDjango20Warning, RemovedInDjango110Warning,
+)
 from django.utils.encoding import force_text, smart_text
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, format_html
@@ -74,7 +76,7 @@ class Fieldset(object):
     def _media(self):
         if 'collapse' in self.classes:
             extra = '' if settings.DEBUG else '.min'
-            js = ['jquery%s.js' % extra,
+            js = ['vendor/jquery/jquery%s.js' % extra,
                   'jquery.init.js',
                   'collapse%s.js' % extra]
             return forms.Media(js=[static('admin/js/%s' % url) for url in js])
@@ -121,6 +123,7 @@ class AdminField(object):
         self.field = form[field]  # A django.forms.BoundField instance
         self.is_first = is_first  # Whether this field is first on the line
         self.is_checkbox = isinstance(self.field.field.widget, forms.CheckboxInput)
+        self.is_readonly = False
 
     def label_tag(self):
         classes = []
@@ -173,6 +176,7 @@ class AdminReadonlyField(object):
         self.is_first = is_first
         self.is_checkbox = False
         self.is_readonly = True
+        self.empty_value_display = model_admin.get_empty_value_display()
 
     def label_tag(self):
         attrs = {}
@@ -185,28 +189,36 @@ class AdminReadonlyField(object):
 
     def contents(self):
         from django.contrib.admin.templatetags.admin_list import _boolean_icon
-        from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
         field, obj, model_admin = self.field['field'], self.form.instance, self.model_admin
         try:
             f, attr, value = lookup_field(field, obj, model_admin)
         except (AttributeError, ValueError, ObjectDoesNotExist):
-            result_repr = EMPTY_CHANGELIST_VALUE
+            result_repr = self.empty_value_display
         else:
             if f is None:
                 boolean = getattr(attr, "boolean", False)
                 if boolean:
                     result_repr = _boolean_icon(value)
                 else:
-                    result_repr = smart_text(value)
-                    if getattr(attr, "allow_tags", False):
-                        result_repr = mark_safe(result_repr)
+                    if hasattr(value, "__html__"):
+                        result_repr = value
                     else:
-                        result_repr = linebreaksbr(result_repr)
+                        result_repr = smart_text(value)
+                        if getattr(attr, "allow_tags", False):
+                            warnings.warn(
+                                "Deprecated allow_tags attribute used on %s. "
+                                "Use django.utils.safestring.format_html(), "
+                                "format_html_join(), or mark_safe() instead." % attr,
+                                RemovedInDjango20Warning
+                            )
+                            result_repr = mark_safe(value)
+                        else:
+                            result_repr = linebreaksbr(result_repr)
             else:
-                if isinstance(f.rel, ManyToManyRel) and value is not None:
+                if isinstance(f.remote_field, ManyToManyRel) and value is not None:
                     result_repr = ", ".join(map(six.text_type, value.all()))
                 else:
-                    result_repr = display_for_field(value, f)
+                    result_repr = display_for_field(value, f, self.empty_value_display)
         return conditional_escape(result_repr)
 
 
@@ -352,8 +364,8 @@ class AdminErrorList(forms.utils.ErrorList):
         super(AdminErrorList, self).__init__()
 
         if form.is_bound:
-            self.extend(list(six.itervalues(form.errors)))
+            self.extend(form.errors.values())
             for inline_formset in inline_formsets:
                 self.extend(inline_formset.non_form_errors())
                 for errors_in_inline_form in inline_formset.errors:
-                    self.extend(list(six.itervalues(errors_in_inline_form)))
+                    self.extend(errors_in_inline_form.values())

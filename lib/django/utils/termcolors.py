@@ -76,6 +76,7 @@ LIGHT_PALETTE = 'light'
 PALETTES = {
     NOCOLOR_PALETTE: {
         'ERROR': {},
+        'SUCCESS': {},
         'WARNING': {},
         'NOTICE': {},
         'SQL_FIELD': {},
@@ -96,6 +97,7 @@ PALETTES = {
     },
     DARK_PALETTE: {
         'ERROR': {'fg': 'red', 'opts': ('bold',)},
+        'SUCCESS': {'fg': 'green', 'opts': ('bold',)},
         'WARNING': {'fg': 'yellow', 'opts': ('bold',)},
         'NOTICE': {'fg': 'red'},
         'SQL_FIELD': {'fg': 'green', 'opts': ('bold',)},
@@ -116,6 +118,7 @@ PALETTES = {
     },
     LIGHT_PALETTE: {
         'ERROR': {'fg': 'red', 'opts': ('bold',)},
+        'SUCCESS': {'fg': 'green', 'opts': ('bold',)},
         'WARNING': {'fg': 'yellow', 'opts': ('bold',)},
         'NOTICE': {'fg': 'red'},
         'SQL_FIELD': {'fg': 'green', 'opts': ('bold',)},
@@ -141,7 +144,7 @@ DEFAULT_PALETTE = DARK_PALETTE
 def parse_color_setting(config_string):
     """Parse a DJANGO_COLORS environment variable to produce the system palette
 
-    The general form of a pallete definition is:
+    The general form of a palette definition is:
 
         "palette;role=fg;role=fg/bg;role=fg,option,option;role=fg/bg,option,option"
 
@@ -153,7 +156,7 @@ def parse_color_setting(config_string):
         option is a display options.
 
     Specifying a named palette is the same as manually specifying the individual
-    definitions for each role. Any individual definitions following the pallete
+    definitions for each role. Any individual definitions following the palette
     definition will augment the base palette definition.
 
     Valid roles:
@@ -166,7 +169,6 @@ def parse_color_setting(config_string):
 
     Valid options:
         'bold', 'underscore', 'blink', 'reverse', 'conceal'
-
     """
     if not config_string:
         return PALETTES[DEFAULT_PALETTE]

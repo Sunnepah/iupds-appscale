@@ -4,19 +4,18 @@
 """
 from __future__ import unicode_literals
 
-# Python, ctypes and types dependencies.
+import json
 from ctypes import addressof, byref, c_double
 
-from django.contrib.gis.gdal.error import SRSException
+from django.contrib.gis import gdal
 from django.contrib.gis.geometry.regex import hex_regex, json_regex, wkt_regex
 from django.contrib.gis.geos import prototypes as capi
-from django.contrib.gis.geos.base import GEOSBase, gdal
+from django.contrib.gis.geos.base import GEOSBase
 from django.contrib.gis.geos.coordseq import GEOSCoordSeq
-from django.contrib.gis.geos.error import GEOSException, GEOSIndexError
+from django.contrib.gis.geos.error import GEOSException
 from django.contrib.gis.geos.libgeos import GEOM_PTR
 from django.contrib.gis.geos.mutable_list import ListMixin
-# These functions provide access to a thread-local instance
-# of their corresponding GEOS I/O class.
+from django.contrib.gis.geos.prepared import PreparedGeometry
 from django.contrib.gis.geos.prototypes.io import (
     ewkb_w, wkb_r, wkb_w, wkt_r, wkt_w,
 )
@@ -27,11 +26,10 @@ from django.utils.encoding import force_bytes, force_text
 class GEOSGeometry(GEOSBase, ListMixin):
     "A class that, generally, encapsulates a GEOS geometry."
 
-    # Raise GEOSIndexError instead of plain IndexError
-    # (see ticket #4740 and GEOSIndexError docstring)
-    _IndexError = GEOSIndexError
+    _GEOS_CLASSES = None
 
     ptr_type = GEOM_PTR
+    has_cs = False  # Only Point, LineString, LinearRing have coordinate sequences
 
     def __init__(self, geo_input, srid=None):
         """
@@ -95,7 +93,24 @@ class GEOSGeometry(GEOSBase, ListMixin):
             self.srid = srid
 
         # Setting the class type (e.g., Point, Polygon, etc.)
-        self.__class__ = GEOS_CLASSES[self.geom_typeid]
+        if GEOSGeometry._GEOS_CLASSES is None:
+            # Lazy-loaded variable to avoid import conflicts with GEOSGeometry.
+            from .linestring import LineString, LinearRing
+            from .point import Point
+            from .polygon import Polygon
+            from .collections import (
+                GeometryCollection, MultiPoint, MultiLineString, MultiPolygon)
+            GEOSGeometry._GEOS_CLASSES = {
+                0: Point,
+                1: LineString,
+                2: LinearRing,
+                3: Polygon,
+                4: MultiPoint,
+                5: MultiLineString,
+                6: MultiPolygon,
+                7: GeometryCollection,
+            }
+        self.__class__ = GEOSGeometry._GEOS_CLASSES[self.geom_typeid]
 
         # Setting the coordinate sequence for the geometry (will be None on
         # geometries that do not have coordinate sequences)
@@ -188,15 +203,6 @@ class GEOSGeometry(GEOSBase, ListMixin):
         return self.sym_difference(other)
 
     # #### Coordinate Sequence Routines ####
-    @property
-    def has_cs(self):
-        "Returns True if this Geometry has a coordinate sequence, False if not."
-        # Only these geometries are allowed to have coordinate sequences.
-        if isinstance(self, (Point, LineString, LinearRing)):
-            return True
-        else:
-            return False
-
     def _set_cs(self):
         "Sets the coordinate sequence for this Geometry."
         if self.has_cs:
@@ -403,12 +409,9 @@ class GEOSGeometry(GEOSBase, ListMixin):
     @property
     def json(self):
         """
-        Returns GeoJSON representation of this Geometry if GDAL is installed.
+        Returns GeoJSON representation of this Geometry.
         """
-        if gdal.HAS_GDAL:
-            return self.ogr.json
-        else:
-            raise GEOSException('GeoJSON output only supported when GDAL is installed.')
+        return json.dumps({'type': self.__class__.__name__, 'coordinates': self.coords})
     geojson = json
 
     @property
@@ -452,7 +455,7 @@ class GEOSGeometry(GEOSBase, ListMixin):
         if self.srid:
             try:
                 return gdal.OGRGeometry(self.wkb, self.srid)
-            except SRSException:
+            except gdal.SRSException:
                 pass
         return gdal.OGRGeometry(self.wkb)
 
@@ -464,7 +467,7 @@ class GEOSGeometry(GEOSBase, ListMixin):
         if self.srid:
             try:
                 return gdal.SpatialReference(self.srid)
-            except SRSException:
+            except gdal.SRSException:
                 pass
         return None
 
@@ -563,16 +566,6 @@ class GEOSGeometry(GEOSBase, ListMixin):
         "Return the envelope for this geometry (a polygon)."
         return self._topology(capi.geos_envelope(self.ptr))
 
-    def interpolate(self, distance):
-        if not isinstance(self, (LineString, MultiLineString)):
-            raise TypeError('interpolate only works on LineString and MultiLineString geometries')
-        return self._topology(capi.geos_interpolate(self.ptr, distance))
-
-    def interpolate_normalized(self, distance):
-        if not isinstance(self, (LineString, MultiLineString)):
-            raise TypeError('interpolate only works on LineString and MultiLineString geometries')
-        return self._topology(capi.geos_interpolate_normalized(self.ptr, distance))
-
     def intersection(self, other):
         "Returns a Geometry representing the points shared by this Geometry and other."
         return self._topology(capi.geos_intersection(self.ptr, other.ptr))
@@ -581,20 +574,6 @@ class GEOSGeometry(GEOSBase, ListMixin):
     def point_on_surface(self):
         "Computes an interior point of this Geometry."
         return self._topology(capi.geos_pointonsurface(self.ptr))
-
-    def project(self, point):
-        if not isinstance(point, Point):
-            raise TypeError('locate_point argument must be a Point')
-        if not isinstance(self, (LineString, MultiLineString)):
-            raise TypeError('locate_point only works on LineString and MultiLineString geometries')
-        return capi.geos_project(self.ptr, point.ptr)
-
-    def project_normalized(self, point):
-        if not isinstance(point, Point):
-            raise TypeError('locate_point argument must be a Point')
-        if not isinstance(self, (LineString, MultiLineString)):
-            raise TypeError('locate_point only works on LineString and MultiLineString geometries')
-        return capi.geos_project_normalized(self.ptr, point.ptr)
 
     def relate(self, other):
         "Returns the DE-9IM intersection matrix for this Geometry and the other."
@@ -650,6 +629,7 @@ class GEOSGeometry(GEOSBase, ListMixin):
         Returns the extent of this geometry as a 4-tuple, consisting of
         (xmin, ymin, xmax, ymax).
         """
+        from .point import Point
         env = self.envelope
         if isinstance(env, Point):
             xmin, ymin = env.tuple
@@ -672,21 +652,24 @@ class GEOSGeometry(GEOSBase, ListMixin):
         return GEOSGeometry(capi.geom_clone(self.ptr), srid=self.srid)
 
 
-# Class mapping dictionary.  Has to be at the end to avoid import
-# conflicts with GEOSGeometry.
-from django.contrib.gis.geos.linestring import LineString, LinearRing  # isort:skip
-from django.contrib.gis.geos.point import Point                     # isort:skip
-from django.contrib.gis.geos.polygon import Polygon                 # isort:skip
-from django.contrib.gis.geos.collections import (                   # isort:skip
-    GeometryCollection, MultiPoint, MultiLineString, MultiPolygon)
-from django.contrib.gis.geos.prepared import PreparedGeometry       # isort:skip
-GEOS_CLASSES = {
-    0: Point,
-    1: LineString,
-    2: LinearRing,
-    3: Polygon,
-    4: MultiPoint,
-    5: MultiLineString,
-    6: MultiPolygon,
-    7: GeometryCollection,
-}
+class ProjectInterpolateMixin(object):
+    """
+    Used for LineString and MultiLineString.
+    """
+    def interpolate(self, distance):
+        return self._topology(capi.geos_interpolate(self.ptr, distance))
+
+    def interpolate_normalized(self, distance):
+        return self._topology(capi.geos_interpolate_normalized(self.ptr, distance))
+
+    def project(self, point):
+        from .point import Point
+        if not isinstance(point, Point):
+            raise TypeError('locate_point argument must be a Point')
+        return capi.geos_project(self.ptr, point.ptr)
+
+    def project_normalized(self, point):
+        from .point import Point
+        if not isinstance(point, Point):
+            raise TypeError('locate_point argument must be a Point')
+        return capi.geos_project_normalized(self.ptr, point.ptr)

@@ -1,6 +1,3 @@
-# Avoid importing `importlib` from this package.
-from __future__ import absolute_import
-
 import datetime
 import decimal
 import unicodedata
@@ -22,15 +19,33 @@ _format_cache = {}
 _format_modules_cache = {}
 
 ISO_INPUT_FORMATS = {
-    'DATE_INPUT_FORMATS': ('%Y-%m-%d',),
-    'TIME_INPUT_FORMATS': ('%H:%M:%S', '%H:%M:%S.%f', '%H:%M'),
-    'DATETIME_INPUT_FORMATS': (
+    'DATE_INPUT_FORMATS': ['%Y-%m-%d'],
+    'TIME_INPUT_FORMATS': ['%H:%M:%S', '%H:%M:%S.%f', '%H:%M'],
+    'DATETIME_INPUT_FORMATS': [
         '%Y-%m-%d %H:%M:%S',
         '%Y-%m-%d %H:%M:%S.%f',
         '%Y-%m-%d %H:%M',
         '%Y-%m-%d'
-    ),
+    ],
 }
+
+
+FORMAT_SETTINGS = frozenset([
+    'DECIMAL_SEPARATOR',
+    'THOUSAND_SEPARATOR',
+    'NUMBER_GROUPING',
+    'FIRST_DAY_OF_WEEK',
+    'MONTH_DAY_FORMAT',
+    'TIME_FORMAT',
+    'DATE_FORMAT',
+    'DATETIME_FORMAT',
+    'SHORT_DATE_FORMAT',
+    'SHORT_DATETIME_FORMAT',
+    'YEAR_MONTH_FORMAT',
+    'DATE_INPUT_FORMATS',
+    'TIME_INPUT_FORMATS',
+    'DATETIME_INPUT_FORMATS',
+])
 
 
 def reset_format_cache():
@@ -103,9 +118,6 @@ def get_format(format_type, lang=None, use_l10n=None):
             cached = _format_cache[cache_key]
             if cached is not None:
                 return cached
-            else:
-                # Return the general setting by default
-                return getattr(settings, format_type)
         except KeyError:
             for module in get_format_modules(lang):
                 try:
@@ -120,6 +132,9 @@ def get_format(format_type, lang=None, use_l10n=None):
                 except AttributeError:
                     pass
             _format_cache[cache_key] = None
+    if format_type not in FORMAT_SETTINGS:
+        return format_type
+    # Return the general setting by default
     return getattr(settings, format_type)
 
 get_format_lazy = lazy(get_format, six.text_type, list, tuple)

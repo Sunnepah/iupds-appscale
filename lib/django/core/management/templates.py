@@ -14,8 +14,7 @@ import django
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management.utils import handle_extensions
 from django.template import Context, Engine
-from django.utils import archive
-from django.utils._os import rmtree_errorhandler
+from django.utils import archive, six
 from django.utils.six.moves.urllib.request import urlretrieve
 from django.utils.version import get_docs_version
 
@@ -99,12 +98,16 @@ class TemplateCommand(BaseCommand):
         base_name = '%s_name' % app_or_project
         base_subdir = '%s_template' % app_or_project
         base_directory = '%s_directory' % app_or_project
+        camel_case_name = 'camel_case_%s_name' % app_or_project
+        camel_case_value = ''.join(x for x in name.title() if x != '_')
 
         context = Context(dict(options, **{
             base_name: name,
             base_directory: top_dir,
+            camel_case_name: camel_case_value,
             'docs_version': get_docs_version(),
             'django_version': django.__version__,
+            'unicode_literals': '' if six.PY3 else 'from __future__ import unicode_literals\n\n',
         }), autoescape=False)
 
         # Setup a stub settings environment for template rendering
@@ -172,8 +175,7 @@ class TemplateCommand(BaseCommand):
                 if path.isfile(path_to_remove):
                     os.remove(path_to_remove)
                 else:
-                    shutil.rmtree(path_to_remove,
-                                  onerror=rmtree_errorhandler)
+                    shutil.rmtree(path_to_remove)
 
     def handle_template(self, template, subdir):
         """

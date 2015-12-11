@@ -1,23 +1,19 @@
 import warnings
 
-from django.utils.deprecation import RemovedInDjango110Warning
+from django.utils import six
+from django.utils.deprecation import (
+    DeprecationInstanceCheck, RemovedInDjango20Warning,
+    RemovedInDjango110Warning,
+)
 
 from . import engines
 from .backends.django import DjangoTemplates
-from .base import Origin, TemplateDoesNotExist
+from .base import Origin
 from .engine import (
     _context_instance_undefined, _dictionary_undefined, _dirs_undefined,
 )
+from .exceptions import TemplateDoesNotExist
 from .loaders import base
-
-
-class LoaderOrigin(Origin):
-    def __init__(self, display_name, loader, name, dirs):
-        super(LoaderOrigin, self).__init__(display_name)
-        self.loader, self.loadname, self.dirs = loader, name, dirs
-
-    def reload(self):
-        return self.loader(self.loadname, self.dirs)[0]
 
 
 def get_template(template_name, dirs=_dirs_undefined, using=None):
@@ -26,6 +22,7 @@ def get_template(template_name, dirs=_dirs_undefined, using=None):
 
     Raises TemplateDoesNotExist if no such template exists.
     """
+    chain = []
     engines = _engine_list(using)
     for engine in engines:
         try:
@@ -40,10 +37,10 @@ def get_template(template_name, dirs=_dirs_undefined, using=None):
                     stacklevel=2)
             else:
                 return engine.get_template(template_name)
-        except TemplateDoesNotExist:
-            pass
+        except TemplateDoesNotExist as e:
+            chain.append(e)
 
-    raise TemplateDoesNotExist(template_name)
+    raise TemplateDoesNotExist(template_name, chain=chain)
 
 
 def select_template(template_name_list, dirs=_dirs_undefined, using=None):
@@ -54,6 +51,7 @@ def select_template(template_name_list, dirs=_dirs_undefined, using=None):
 
     Raises TemplateDoesNotExist if no such template exists.
     """
+    chain = []
     engines = _engine_list(using)
     for template_name in template_name_list:
         for engine in engines:
@@ -69,11 +67,11 @@ def select_template(template_name_list, dirs=_dirs_undefined, using=None):
                         stacklevel=2)
                 else:
                     return engine.get_template(template_name)
-            except TemplateDoesNotExist:
-                pass
+            except TemplateDoesNotExist as e:
+                chain.append(e)
 
     if template_name_list:
-        raise TemplateDoesNotExist(', '.join(template_name_list))
+        raise TemplateDoesNotExist(', '.join(template_name_list), chain=chain)
     else:
         raise TemplateDoesNotExist("No template names provided")
 
@@ -99,6 +97,7 @@ def render_to_string(template_name, context=None,
         return template.render(context, request)
 
     else:
+        chain = []
         # Some deprecated arguments were passed - use the legacy code path
         for engine in _engine_list(using):
             try:
@@ -128,13 +127,14 @@ def render_to_string(template_name, context=None,
                         "Skipping template backend %s because its render_to_string "
                         "method doesn't support the dictionary argument." %
                         engine.name, stacklevel=2)
-            except TemplateDoesNotExist:
+            except TemplateDoesNotExist as e:
+                chain.append(e)
                 continue
 
         if template_name:
             if isinstance(template_name, (list, tuple)):
                 template_name = ', '.join(template_name)
-            raise TemplateDoesNotExist(template_name)
+            raise TemplateDoesNotExist(template_name, chain=chain)
         else:
             raise TemplateDoesNotExist("No template names provided")
 
@@ -152,3 +152,8 @@ class BaseLoader(base.Loader):
             "django.template.loaders.base.Loader.",
             RemovedInDjango110Warning, stacklevel=2)
         super(BaseLoader, self).__init__(*args, **kwargs)
+
+
+class LoaderOrigin(six.with_metaclass(DeprecationInstanceCheck, Origin)):
+    alternative = 'django.template.Origin'
+    deprecation_warning = RemovedInDjango20Warning

@@ -8,10 +8,8 @@ from threading import local
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
-from django.utils._os import upath
-from django.utils.deprecation import (
-    RemovedInDjango19Warning, RemovedInDjango110Warning,
-)
+from django.utils._os import npath, upath
+from django.utils.deprecation import RemovedInDjango110Warning
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 
@@ -106,7 +104,14 @@ class DatabaseErrorWrapper(object):
 
 
 def load_backend(backend_name):
-    # Look for a fully qualified database backend name
+    """
+    Return a database backend's "base" module given a fully qualified database
+    backend name, or raise an error if it doesn't exist.
+    """
+    # This backend was renamed in Django 1.9.
+    if backend_name == 'django.db.backends.postgresql_psycopg2':
+        backend_name = 'django.db.backends.postgresql'
+
     try:
         return import_module('%s.base' % backend_name)
     except ImportError as e_user:
@@ -115,8 +120,9 @@ def load_backend(backend_name):
         backend_dir = os.path.join(os.path.dirname(upath(__file__)), 'backends')
         try:
             builtin_backends = [
-                name for _, name, ispkg in pkgutil.iter_modules([backend_dir])
-                if ispkg and name != 'dummy']
+                name for _, name, ispkg in pkgutil.iter_modules([npath(backend_dir)])
+                if ispkg and name not in {'base', 'dummy', 'postgresql_psycopg2'}
+            ]
         except EnvironmentError:
             builtin_backends = []
         if backend_name not in ['django.db.backends.%s' % b for b in
@@ -155,6 +161,9 @@ class ConnectionHandler(object):
                     'ENGINE': 'django.db.backends.dummy',
                 },
             }
+        if self._databases[DEFAULT_DB_ALIAS] == {}:
+            self._databases[DEFAULT_DB_ALIAS]['ENGINE'] = 'django.db.backends.dummy'
+
         if DEFAULT_DB_ALIAS not in self._databases:
             raise ImproperlyConfigured("You must define a '%s' database" % DEFAULT_DB_ALIAS)
         return self._databases
@@ -176,16 +185,9 @@ class ConnectionHandler(object):
             conn['ENGINE'] = 'django.db.backends.dummy'
         conn.setdefault('CONN_MAX_AGE', 0)
         conn.setdefault('OPTIONS', {})
-        conn.setdefault('TIME_ZONE', 'UTC' if settings.USE_TZ else settings.TIME_ZONE)
+        conn.setdefault('TIME_ZONE', None)
         for setting in ['NAME', 'USER', 'PASSWORD', 'HOST', 'PORT']:
             conn.setdefault(setting, '')
-
-    TEST_SETTING_RENAMES = {
-        'CREATE': 'CREATE_DB',
-        'USER_CREATE': 'CREATE_USER',
-        'PASSWD': 'PASSWORD',
-    }
-    TEST_SETTING_RENAMES_REVERSE = {v: k for k, v in TEST_SETTING_RENAMES.items()}
 
     def prepare_test_settings(self, alias):
         """
@@ -196,37 +198,7 @@ class ConnectionHandler(object):
         except KeyError:
             raise ConnectionDoesNotExist("The connection %s doesn't exist" % alias)
 
-        test_dict_set = 'TEST' in conn
         test_settings = conn.setdefault('TEST', {})
-        old_test_settings = {}
-        for key, value in six.iteritems(conn):
-            if key.startswith('TEST_'):
-                new_key = key[5:]
-                new_key = self.TEST_SETTING_RENAMES.get(new_key, new_key)
-                old_test_settings[new_key] = value
-
-        if old_test_settings:
-            if test_dict_set:
-                if test_settings != old_test_settings:
-                    raise ImproperlyConfigured(
-                        "Connection '%s' has mismatched TEST and TEST_* "
-                        "database settings." % alias)
-            else:
-                test_settings.update(old_test_settings)
-                for key, _ in six.iteritems(old_test_settings):
-                    warnings.warn("In Django 1.9 the TEST_%s connection setting will be moved "
-                                  "to a %s entry in the TEST setting" %
-                                  (self.TEST_SETTING_RENAMES_REVERSE.get(key, key), key),
-                                  RemovedInDjango19Warning, stacklevel=2)
-
-        for key in list(conn.keys()):
-            if key.startswith('TEST_'):
-                del conn[key]
-        # Check that they didn't just use the old name with 'TEST_' removed
-        for key, new_key in six.iteritems(self.TEST_SETTING_RENAMES):
-            if key in test_settings:
-                warnings.warn("Test setting %s was renamed to %s; specified value (%s) ignored" %
-                              (key, new_key, test_settings[key]), stacklevel=2)
         for key in ['CHARSET', 'COLLATION', 'NAME', 'MIRROR']:
             test_settings.setdefault(key, None)
 
@@ -321,20 +293,21 @@ class ConnectionRouter(object):
     def allow_migrate(self, db, app_label, **hints):
         for router in self.routers:
             try:
-                try:
-                    method = router.allow_migrate
-                except AttributeError:
-                    method = router.allow_syncdb
-                    warnings.warn(
-                        'Router.allow_syncdb has been deprecated and will stop working in Django 1.9. '
-                        'Rename the method to allow_migrate.',
-                        RemovedInDjango19Warning, stacklevel=2)
+                method = router.allow_migrate
             except AttributeError:
                 # If the router doesn't have a method, skip to the next one.
                 continue
 
-            argspec = inspect.getargspec(method)
-            if len(argspec.args) == 3 and not argspec.keywords:
+            if six.PY3:
+                sig = inspect.signature(router.allow_migrate)
+                has_deprecated_signature = not any(
+                    p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+                )
+            else:
+                argspec = inspect.getargspec(router.allow_migrate)
+                has_deprecated_signature = len(argspec.args) == 3 and not argspec.keywords
+
+            if has_deprecated_signature:
                 warnings.warn(
                     "The signature of allow_migrate has changed from "
                     "allow_migrate(self, db, model) to "

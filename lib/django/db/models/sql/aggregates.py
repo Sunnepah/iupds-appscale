@@ -5,7 +5,7 @@ import copy
 import warnings
 
 from django.db.models.fields import FloatField, IntegerField
-from django.db.models.lookups import RegisterLookupMixin
+from django.db.models.query_utils import RegisterLookupMixin
 from django.utils.deprecation import RemovedInDjango110Warning
 from django.utils.functional import cached_property
 
@@ -49,7 +49,6 @@ class Aggregate(RegisterLookupMixin):
          * is_computed, a boolean indicating if this output of this aggregate
            is a computed float (e.g., an average), regardless of the input
            type.
-
         """
         self.col = col
         self.source = source

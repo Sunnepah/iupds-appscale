@@ -4,7 +4,6 @@ import cgi
 import codecs
 import logging
 import sys
-import warnings
 from io import BytesIO
 from threading import Lock
 
@@ -13,10 +12,7 @@ from django.conf import settings
 from django.core import signals
 from django.core.handlers import base
 from django.core.urlresolvers import set_script_prefix
-# For backwards compatibility -- lots of code uses this in the wild!
-from django.http.response import REASON_PHRASES as STATUS_CODE_TEXT  # NOQA
-from django.utils import datastructures, six
-from django.utils.deprecation import RemovedInDjango19Warning
+from django.utils import six
 from django.utils.encoding import force_str, force_text
 from django.utils.functional import cached_property
 
@@ -119,13 +115,6 @@ class WSGIRequest(http.HttpRequest):
     def _get_scheme(self):
         return self.environ.get('wsgi.url_scheme')
 
-    def _get_request(self):
-        warnings.warn('`request.REQUEST` is deprecated, use `request.GET` or '
-                      '`request.POST` instead.', RemovedInDjango19Warning, 2)
-        if not hasattr(self, '_request'):
-            self._request = datastructures.MergeDict(self.POST, self.GET)
-        return self._request
-
     @cached_property
     def GET(self):
         # The WSGI spec says 'QUERY_STRING' may be absent.
@@ -152,7 +141,6 @@ class WSGIRequest(http.HttpRequest):
 
     POST = property(_get_post, _set_post)
     FILES = property(_get_files)
-    REQUEST = property(_get_request)
 
 
 class WSGIHandler(base.BaseHandler):
@@ -231,7 +219,7 @@ def get_script_name(environ):
 
     if script_url:
         path_info = get_bytes_from_wsgi(environ, 'PATH_INFO', '')
-        script_name = script_url[:-len(path_info)]
+        script_name = script_url[:-len(path_info)] if path_info else script_url
     else:
         script_name = get_bytes_from_wsgi(environ, 'SCRIPT_NAME', '')
 

@@ -8,6 +8,7 @@ from itertools import chain
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
+from django.db import connections
 from django.db.models.fields import AutoField
 from django.db.models.fields.proxy import OrderWrt
 from django.db.models.fields.related import ManyToManyField
@@ -36,7 +37,8 @@ DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural', 'db_table', 'ordering',
                  'order_with_respect_to', 'app_label', 'db_tablespace',
                  'abstract', 'managed', 'proxy', 'swappable', 'auto_created',
                  'index_together', 'apps', 'default_permissions',
-                 'select_on_save', 'default_related_name')
+                 'select_on_save', 'default_related_name',
+                 'required_db_features', 'required_db_vendor')
 
 
 class raise_deprecation(object):
@@ -100,6 +102,7 @@ class Options(object):
         self.verbose_name_plural = None
         self.db_table = ''
         self.ordering = []
+        self._ordering_clash = False
         self.unique_together = []
         self.index_together = []
         self.select_on_save = False
@@ -110,6 +113,8 @@ class Options(object):
         self.get_latest_by = None
         self.order_with_respect_to = None
         self.db_tablespace = settings.DEFAULT_TABLESPACE
+        self.required_db_features = []
+        self.required_db_vendor = None
         self.meta = meta
         self.pk = None
         self.has_auto_field = False
@@ -172,6 +177,14 @@ class Options(object):
         return link, model, direct, m2m
 
     @property
+    def label(self):
+        return '%s.%s' % (self.app_label, self.object_name)
+
+    @property
+    def label_lower(self):
+        return '%s.%s' % (self.app_label, self.model_name)
+
+    @property
     def app_config(self):
         # Don't go through get_app_config to avoid triggering imports.
         return self.apps.app_configs.get(self.app_label)
@@ -226,16 +239,16 @@ class Options(object):
                     setattr(self, attr_name, getattr(self.meta, attr_name))
                     self.original_attrs[attr_name] = getattr(self, attr_name)
 
-            ut = meta_attrs.pop('unique_together', self.unique_together)
-            self.unique_together = normalize_together(ut)
-
-            it = meta_attrs.pop('index_together', self.index_together)
-            self.index_together = normalize_together(it)
+            self.unique_together = normalize_together(self.unique_together)
+            self.index_together = normalize_together(self.index_together)
 
             # verbose_name_plural is a special case because it uses a 's'
             # by default.
             if self.verbose_name_plural is None:
                 self.verbose_name_plural = string_concat(self.verbose_name, 's')
+
+            # order_with_respect_and ordering are mutually exclusive.
+            self._ordering_clash = bool(self.ordering and self.order_with_respect_to)
 
             # Any leftover attributes must be invalid.
             if meta_attrs != {}:
@@ -307,9 +320,9 @@ class Options(object):
         # ideally, we'd just ask for field.related_model. However, related_model
         # is a cached property, and all the models haven't been loaded yet, so
         # we need to make sure we don't cache a string reference.
-        if field.is_relation and hasattr(field.rel, 'to') and field.rel.to:
+        if field.is_relation and hasattr(field.remote_field, 'model') and field.remote_field.model:
             try:
-                field.rel.to._meta._expire_cache(forward=False)
+                field.remote_field.model._meta._expire_cache(forward=False)
             except AttributeError:
                 pass
             self._expire_cache()
@@ -336,6 +349,22 @@ class Options(object):
     def __str__(self):
         return "%s.%s" % (smart_text(self.app_label), smart_text(self.model_name))
 
+    def can_migrate(self, connection):
+        """
+        Return True if the model can/should be migrated on the `connection`.
+        `connection` can be either a real connection or a connection alias.
+        """
+        if self.proxy or self.swapped or not self.managed:
+            return False
+        if isinstance(connection, six.string_types):
+            connection = connections[connection]
+        if self.required_db_vendor:
+            return self.required_db_vendor == connection.vendor
+        if self.required_db_features:
+            return all(getattr(connection.features, feat, False)
+                       for feat in self.required_db_features)
+        return True
+
     @property
     def verbose_name_raw(self):
         """
@@ -356,7 +385,6 @@ class Options(object):
         case insensitive, so we make sure we are case insensitive here.
         """
         if self.swappable:
-            model_label = '%s.%s' % (self.app_label, self.model_name)
             swapped_for = getattr(settings, self.swappable, None)
             if swapped_for:
                 try:
@@ -368,7 +396,7 @@ class Options(object):
                     # or as part of validation.
                     return swapped_for
 
-                if '%s.%s' % (swapped_label, swapped_object.lower()) not in (None, model_label):
+                if '%s.%s' % (swapped_label, swapped_object.lower()) != self.label_lower:
                     return swapped_for
         return None
 
@@ -392,7 +420,7 @@ class Options(object):
         is_not_an_m2m_field = lambda f: not (f.is_relation and f.many_to_many)
         is_not_a_generic_relation = lambda f: not (f.is_relation and f.one_to_many)
         is_not_a_generic_foreign_key = lambda f: not (
-            f.is_relation and f.many_to_one and not (hasattr(f.rel, 'to') and f.rel.to)
+            f.is_relation and f.many_to_one and not (hasattr(f.remote_field, 'model') and f.remote_field.model)
         )
         return make_immutable_fields_list(
             "fields",
@@ -591,8 +619,8 @@ class Options(object):
             children = chain.from_iterable(c._relation_tree
                                            for c in self.concrete_model._meta.proxied_children
                                            if c is not self)
-            relations = (f.rel for f in children
-                         if include_hidden or not f.rel.field.rel.is_hidden())
+            relations = (f.remote_field for f in children
+                         if include_hidden or not f.remote_field.field.remote_field.is_hidden())
             fields = chain(fields, relations)
         return list(fields)
 
@@ -623,12 +651,12 @@ class Options(object):
 
     def get_base_chain(self, model):
         """
-        Returns a list of parent classes leading to 'model' (order from closet
-        to most distant ancestor). This has to handle the case were 'model' is
-        a grandparent or even more distant relation.
+        Return a list of parent classes leading to `model` (ordered from
+        closest to most distant ancestor). This has to handle the case where
+        `model` is a grandparent or even more distant relation.
         """
         if not self.parents:
-            return None
+            return []
         if model in self.parents:
             return [model]
         for parent in self.parents:
@@ -636,7 +664,7 @@ class Options(object):
             if res:
                 res.insert(0, parent)
                 return res
-        return None
+        return []
 
     def get_parent_list(self):
         """
@@ -689,8 +717,8 @@ class Options(object):
                 if f.is_relation and f.related_model is not None
             )
             for f in fields_with_relations:
-                if not isinstance(f.rel.to, six.string_types):
-                    related_objects_graph[f.rel.to._meta].append(f)
+                if not isinstance(f.remote_field.model, six.string_types):
+                    related_objects_graph[f.remote_field.model._meta].append(f)
 
         for model in all_models:
             # Set the relation_tree using the internal __dict__. In this way
@@ -803,8 +831,8 @@ class Options(object):
             for field in all_fields:
                 # If hidden fields should be included or the relation is not
                 # intentionally hidden, add to the fields dict.
-                if include_hidden or not field.rel.hidden:
-                    fields.append(field.rel)
+                if include_hidden or not field.remote_field.hidden:
+                    fields.append(field.remote_field)
 
         if forward:
             fields.extend(

@@ -12,7 +12,6 @@ from __future__ import unicode_literals
 import socket
 import sys
 from wsgiref import simple_server
-from wsgiref.util import FileWrapper  # NOQA: for backwards compatibility
 
 from django.core.exceptions import ImproperlyConfigured
 from django.core.handlers.wsgi import ISO_8859_1, UTF_8
@@ -33,13 +32,11 @@ def get_internal_wsgi_application():
     this will be the ``application`` object in ``projectname/wsgi.py``.
 
     This function, and the ``WSGI_APPLICATION`` setting itself, are only useful
-    for Django's internal servers (runserver, runfcgi); external WSGI servers
-    should just be configured to point to the correct application object
-    directly.
+    for Django's internal server (runserver); external WSGI servers should just
+    be configured to point to the correct application object directly.
 
     If settings.WSGI_APPLICATION is not set (is ``None``), we just return
     whatever ``django.core.wsgi.get_wsgi_application`` returns.
-
     """
     from django.conf import settings
     app_path = getattr(settings, 'WSGI_APPLICATION')

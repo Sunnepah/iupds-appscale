@@ -1,11 +1,21 @@
 from __future__ import unicode_literals
 
+import warnings
 from collections import deque
+from functools import total_ordering
 
 from django.db.migrations.state import ProjectState
 from django.utils.datastructures import OrderedSet
 from django.utils.encoding import python_2_unicode_compatible
-from django.utils.functional import total_ordering
+
+from .exceptions import CircularDependencyError, NodeNotFoundError
+
+RECURSION_DEPTH_WARNING = (
+    "Maximum recursion depth exceeded while generating migration graph, "
+    "falling back to iterative approach. If you're experiencing performance issues, "
+    "consider squashing migrations as described at "
+    "https://docs.djangoproject.com/en/dev/topics/migrations/#squashing-migrations."
+)
 
 
 @python_2_unicode_compatible
@@ -126,33 +136,68 @@ class MigrationGraph(object):
                 self.node_map[node].__dict__.pop('_descendants', None)
             self.cached = False
 
-    def forwards_plan(self, node):
+    def forwards_plan(self, target):
         """
         Given a node, returns a list of which previous nodes (dependencies)
         must be applied, ending with the node itself.
         This is the list you would follow if applying the migrations to
         a database.
         """
-        if node not in self.nodes:
-            raise NodeNotFoundError("Node %r not a valid node" % (node, ), node)
+        if target not in self.nodes:
+            raise NodeNotFoundError("Node %r not a valid node" % (target, ), target)
         # Use parent.key instead of parent to speed up the frequent hashing in ensure_not_cyclic
-        self.ensure_not_cyclic(node, lambda x: (parent.key for parent in self.node_map[x].parents))
+        self.ensure_not_cyclic(target, lambda x: (parent.key for parent in self.node_map[x].parents))
         self.cached = True
-        return self.node_map[node].ancestors()
+        node = self.node_map[target]
+        try:
+            return node.ancestors()
+        except RuntimeError:
+            # fallback to iterative dfs
+            warnings.warn(RECURSION_DEPTH_WARNING, RuntimeWarning)
+            return self.iterative_dfs(node)
 
-    def backwards_plan(self, node):
+    def backwards_plan(self, target):
         """
         Given a node, returns a list of which dependent nodes (dependencies)
         must be unapplied, ending with the node itself.
         This is the list you would follow if removing the migrations from
         a database.
         """
-        if node not in self.nodes:
-            raise NodeNotFoundError("Node %r not a valid node" % (node, ), node)
+        if target not in self.nodes:
+            raise NodeNotFoundError("Node %r not a valid node" % (target, ), target)
         # Use child.key instead of child to speed up the frequent hashing in ensure_not_cyclic
-        self.ensure_not_cyclic(node, lambda x: (child.key for child in self.node_map[x].children))
+        self.ensure_not_cyclic(target, lambda x: (child.key for child in self.node_map[x].children))
         self.cached = True
-        return self.node_map[node].descendants()
+        node = self.node_map[target]
+        try:
+            return node.descendants()
+        except RuntimeError:
+            # fallback to iterative dfs
+            warnings.warn(RECURSION_DEPTH_WARNING, RuntimeWarning)
+            return self.iterative_dfs(node, forwards=False)
+
+    def iterative_dfs(self, start, forwards=True):
+        """
+        Iterative depth first search, for finding dependencies.
+        """
+        visited = deque()
+        visited.append(start)
+        if forwards:
+            stack = deque(sorted(start.parents))
+        else:
+            stack = deque(sorted(start.children))
+        while stack:
+            node = stack.popleft()
+            visited.appendleft(node)
+            if forwards:
+                children = sorted(node.parents, reverse=True)
+            else:
+                children = sorted(node.children, reverse=True)
+            # reverse sorting is needed because prepending using deque.extendleft
+            # also effectively reverses values
+            stack.extendleft(children)
+
+        return list(OrderedSet(visited))
 
     def root_nodes(self, app=None):
         """
@@ -202,10 +247,14 @@ class MigrationGraph(object):
                     node = stack.pop()
 
     def __str__(self):
-        return "Graph: %s nodes, %s edges" % (
-            len(self.nodes),
-            sum(len(node.parents) for node in self.node_map.values()),
-        )
+        return 'Graph: %s nodes, %s edges' % self._nodes_and_edges()
+
+    def __repr__(self):
+        nodes, edges = self._nodes_and_edges()
+        return '<%s: nodes=%s, edges=%s>' % (self.__class__.__name__, nodes, edges)
+
+    def _nodes_and_edges(self):
+        return len(self.nodes), sum(len(node.parents) for node in self.node_map.values())
 
     def make_state(self, nodes=None, at_end=True, real_apps=None):
         """
@@ -233,27 +282,3 @@ class MigrationGraph(object):
 
     def __contains__(self, node):
         return node in self.nodes
-
-
-class CircularDependencyError(Exception):
-    """
-    Raised when there's an impossible-to-resolve circular dependency.
-    """
-    pass
-
-
-@python_2_unicode_compatible
-class NodeNotFoundError(LookupError):
-    """
-    Raised when an attempt on a node is made that is not available in the graph.
-    """
-
-    def __init__(self, message, node):
-        self.message = message
-        self.node = node
-
-    def __str__(self):
-        return self.message
-
-    def __repr__(self):
-        return "NodeNotFoundError(%r)" % self.node

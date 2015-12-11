@@ -4,6 +4,7 @@ import time
 from django.conf import settings
 from django.db.backends.base.creation import BaseDatabaseCreation
 from django.db.utils import DatabaseError
+from django.utils.functional import cached_property
 from django.utils.six.moves import input
 
 TEST_DATABASE_PREFIX = 'test_'
@@ -12,9 +13,26 @@ PASSWORD = 'Im_a_lumberjack'
 
 class DatabaseCreation(BaseDatabaseCreation):
 
+    @cached_property
+    def _maindb_connection(self):
+        """
+        This is analogous to other backends' `_nodb_connection` property,
+        which allows access to an "administrative" connection which can
+        be used to manage the test databases.
+        For Oracle, the only connection that can be used for that purpose
+        is the main (non-test) connection.
+        """
+        settings_dict = settings.DATABASES[self.connection.alias]
+        user = settings_dict.get('SAVED_USER') or settings_dict['USER']
+        password = settings_dict.get('SAVED_PASSWORD') or settings_dict['PASSWORD']
+        settings_dict = settings_dict.copy()
+        settings_dict.update(USER=user, PASSWORD=password)
+        DatabaseWrapper = type(self.connection)
+        return DatabaseWrapper(settings_dict, alias=self.connection.alias)
+
     def _create_test_db(self, verbosity=1, autoclobber=False, keepdb=False):
         parameters = self._get_test_db_params()
-        cursor = self.connection.cursor()
+        cursor = self._maindb_connection.cursor()
         if self._test_database_create():
             try:
                 self._execute_test_db_creation(cursor, parameters, verbosity, keepdb)
@@ -30,7 +48,7 @@ class DatabaseCreation(BaseDatabaseCreation):
                         "Type 'yes' to delete it, or 'no' to cancel: " % parameters['user'])
                 if autoclobber or confirm == 'yes':
                     if verbosity >= 1:
-                        print("Destroying old test database '%s'..." % self.connection.alias)
+                        print("Destroying old test database for alias '%s'..." % self.connection.alias)
                     try:
                         self._execute_test_db_destruction(cursor, parameters, verbosity)
                     except DatabaseError as e:
@@ -82,8 +100,18 @@ class DatabaseCreation(BaseDatabaseCreation):
                     print("Tests cancelled.")
                     sys.exit(1)
 
-        self.connection.close()  # done with main user -- test user and tablespaces created
+        self._maindb_connection.close()  # done with main user -- test user and tablespaces created
+        self._switch_to_test_user(parameters)
+        return self.connection.settings_dict['NAME']
 
+    def _switch_to_test_user(self, parameters):
+        """
+        Oracle doesn't have the concept of separate databases under the same user.
+        Thus, we use a separate user (see _create_test_db). This method is used
+        to switch to that user. We will need the main user again for clean-up when
+        we end testing, so we keep its credentials in SAVED_USER/SAVED_PASSWORD
+        entries in the settings dict.
+        """
         real_settings = settings.DATABASES[self.connection.alias]
         real_settings['SAVED_USER'] = self.connection.settings_dict['SAVED_USER'] = \
             self.connection.settings_dict['USER']
@@ -95,7 +123,13 @@ class DatabaseCreation(BaseDatabaseCreation):
             self.connection.settings_dict['USER'] = parameters['user']
         real_settings['PASSWORD'] = self.connection.settings_dict['PASSWORD'] = parameters['password']
 
-        return self.connection.settings_dict['NAME']
+    def set_as_test_mirror(self, primary_settings_dict):
+        """
+        Set this database up to be used in testing as a mirror of a primary database
+        whose settings are given
+        """
+        self.connection.settings_dict['USER'] = primary_settings_dict['USER']
+        self.connection.settings_dict['PASSWORD'] = primary_settings_dict['PASSWORD']
 
     def _handle_objects_preventing_db_destruction(self, cursor, parameters, verbosity, autoclobber):
         # There are objects in the test tablespace which prevent dropping it
@@ -118,7 +152,7 @@ class DatabaseCreation(BaseDatabaseCreation):
                     sys.exit(2)
                 try:
                     if verbosity >= 1:
-                        print("Destroying old test database '%s'..." % self.connection.alias)
+                        print("Destroying old test database for alias '%s'..." % self.connection.alias)
                     self._execute_test_db_destruction(cursor, parameters, verbosity)
                 except Exception as e:
                     sys.stderr.write("Got an error destroying the test database: %s\n" % e)
@@ -139,8 +173,9 @@ class DatabaseCreation(BaseDatabaseCreation):
         """
         self.connection.settings_dict['USER'] = self.connection.settings_dict['SAVED_USER']
         self.connection.settings_dict['PASSWORD'] = self.connection.settings_dict['SAVED_PASSWORD']
+        self.connection.close()
         parameters = self._get_test_db_params()
-        cursor = self.connection.cursor()
+        cursor = self._maindb_connection.cursor()
         time.sleep(1)  # To avoid "database is being accessed by other users" errors.
         if self._test_user_create():
             if verbosity >= 1:
@@ -150,7 +185,7 @@ class DatabaseCreation(BaseDatabaseCreation):
             if verbosity >= 1:
                 print('Destroying test database tables...')
             self._execute_test_db_destruction(cursor, parameters, verbosity)
-        self.connection.close()
+        self._maindb_connection.close()
 
     def _execute_test_db_creation(self, cursor, parameters, verbosity, keepdb=False):
         if verbosity >= 2:
