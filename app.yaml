@@ -15,7 +15,7 @@
 # This file specifies your Python application's runtime configuration.
 # See https://cloud.google.com/appengine/docs/managed-vms/config for details.
 
-#[ START django_app]
+# [START django_app]
 version: 1
 runtime: python27
 api_version: 1
@@ -34,4 +34,4 @@ handlers:
 libraries:
 - name: MySQLdb
   version: "latest"
-#[ END django_app]
+# [END django_app]
