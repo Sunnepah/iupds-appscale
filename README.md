@@ -55,11 +55,13 @@ See the README file for directions. You'll need python 2.7 and [pip 7.0 or later
 1. Install dependencies in the project's `lib/` directory.
    Note: App Engine can only import libraries from inside your project directory. The pip -t flag installs dependencies into the
    directory specified, so here it's used to install the lastest Django version into lib/. appengine_config.py uses the
-   appengine vendor extension to ensure lib/ is on the Python sys.path.
+   appengine vendor extension to ensure lib/ is on the Python sys.path. Since the deployed environment will use the built-in
+   MySQL libraries, it should be installed separately to run locally and not added to the lib folder.
 
    ```
    cd appengine-try-python-django
    pip install -r requirements.txt -t lib
+   pip MySQL-python
    ```
 1. Create a new CloudSQL instance.
     * From the Google Cloud Console, go to [Storage > CloudSQL> Create Instance](https://console.developers.google.com/project/_/sql/create)
