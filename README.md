@@ -60,8 +60,10 @@ See the README file for directions. You'll need python 2.7 and [pip 7.0 or later
 
    ```
    cd appengine-try-python-django
+   # vendor Django directly into the project
    pip install -r requirements.txt -t lib
-   pip MySQL-python
+   # install globally or within a virtualenv
+   pip install MySQL-python
    ```
 1. Create a new CloudSQL instance.
     * From the Google Cloud Console, go to [Storage > CloudSQL> Create Instance](https://console.developers.google.com/project/_/sql/create)
