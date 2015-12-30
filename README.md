@@ -52,18 +52,20 @@ See the README file for directions. You'll need python 2.7 and [pip 7.0 or later
    ```
    git clone https://github.com/GoogleCloudPlatform/appengine-django-skeleton.git
    ```
-1. Install dependencies in the project's `lib/` directory.
-   Note: App Engine can only import libraries from inside your project directory. The pip -t flag installs dependencies into the
-   directory specified, so here it's used to install the lastest Django version into lib/. appengine_config.py uses the
-   appengine vendor extension to ensure lib/ is on the Python sys.path. Since the deployed environment will use the built-in
-   MySQL libraries, it should be installed separately to run locally and not added to the lib folder.
+1. Install dependencies. There are two types of dependencies. requirements-local.txt contains libraries that are already
+   expressed in app.yaml, like MySQL. Since it's not a pure Python library, the App Engine Sandbox version of the library
+   must be used. 
 
+   Libraries which are pure Python can be installed into the directory and used directly using the `pip -t` flag. In order
+   to get a recent version of Django, that is added to requirements-vendor.txt and added to this project. In order to make
+   this project deployable directly after clone, the vendored libraries were checked into source, but new ones can be added
+   by adding them to requirements-vendor.txt
    ```
    cd appengine-try-python-django
    # vendor Django directly into the project
-   pip install -r requirements.txt -t lib
+   pip install -r requirements-vendor.txt -t lib
    # install globally or within a virtualenv
-   pip install MySQL-python
+   pip install -r requirements-local.txt
    ```
 1. Create a new CloudSQL instance.
     * From the Google Cloud Console, go to [Storage > CloudSQL> Create Instance](https://console.developers.google.com/project/_/sql/create)
