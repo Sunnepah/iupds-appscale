@@ -53,16 +53,16 @@ See the README file for directions. You'll need python 2.7 and [pip 7.0 or later
    git clone https://github.com/GoogleCloudPlatform/appengine-django-skeleton.git
    ```
 1. Install dependencies. There are two types of dependencies. requirements-local.txt contains libraries that are already
-   expressed in app.yaml, like MySQL. They need to be installed locally to run the app locally, but the libraries are not included in the project directory or 
-   uploaded to App Engine, where instead the bundled version is used.
+   expressed in app.yaml, like MySQL. Since app.yaml includes them in the runtime, they don't need to be installed to deploy the app, but they do need to be installed locally to run the app locally. You can use `pip install -r requirements-local.txt' to install them on your system or in a virtualenv, but the libraries should not included in the project directory or 
+   uploaded to App Engine, where instead the bundled version is used. 
 
    requirements-vendor.txt includes dependencies that should be 'vendored', which means its completely included in the directory at
-   time of deployment. This can only be done for pure Python libraries, not ones that require system libraries. In this case, Django is vendored since it's a pure Python library and that way we can install the latest version. These vendored can be added
-   to the project using the `pip -t` flag, which installs it directly into the folder specified, in this case the `lib` folder. In order to make this project deployable directly after clone, the vendored libraries were checked into this repo, but new ones can be added and then installed using the `pip -t flag`.
+   time of deployment. This can only be done for pure Python libraries that are not included in the App Engine sandbox, but not ones that require system libraries. In this case, Django is vendored since it's a pure Python library and that way we can install the latest version. These vendored libraires can be added
+   to the project using the `pip -t` flag, which installs it directly into the folder specified, in this case the `lib` folder. In order to make this project deployable directly after clone, the vendored libraries were already checked into this repo, but new ones can be added and then installed using the `pip -t flag`.
    ```
    # vendor Django directly into the project `lib` folder
    pip install -r requirements-vendor.txt -t lib
-   # install globally or within a virtualenv
+   # install globally or within a virtualenv for local testing
    pip install -r requirements-local.txt
    ```
 1. Create a new CloudSQL instance.
