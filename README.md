@@ -53,16 +53,14 @@ See the README file for directions. You'll need python 2.7 and [pip 7.0 or later
    git clone https://github.com/GoogleCloudPlatform/appengine-django-skeleton.git
    ```
 1. Install dependencies. There are two types of dependencies. requirements-local.txt contains libraries that are already
-   expressed in app.yaml, like MySQL. Since it's not a pure Python library, the App Engine Sandbox version of the library
-   must be used. 
+   expressed in app.yaml, like MySQL. They will be installed locally, but not included in the project directory or 
+   uploaded to App Engine, where instead the bundled version is used.
 
-   Libraries which are pure Python can be installed into the directory and used directly using the `pip -t` flag. In order
-   to get a recent version of Django, that is added to requirements-vendor.txt and added to this project. In order to make
-   this project deployable directly after clone, the vendored libraries were checked into source, but new ones can be added
-   by adding them to requirements-vendor.txt
+   requirements-vendor.txt includes dependencies that should be 'vendored', which means its completely included in the directory at
+   time of deployment. This can only be done for pure Python libraries, not ones that require system libraries. These can be added
+   to the project using the `pip -t` flag, which installs it directly into the folder specified, in this case the `lib` folder. In order to make this project deployable directly after clone, the vendored libraries were checked into this repo, but new ones can be added and then installed using the `pip -t flag`.
    ```
-   cd appengine-try-python-django
-   # vendor Django directly into the project
+   # vendor Django directly into the project `lib` folder
    pip install -r requirements-vendor.txt -t lib
    # install globally or within a virtualenv
    pip install -r requirements-local.txt
@@ -103,7 +101,6 @@ socket as root. When testing locally, use the settings created above to access t
 
   You can also run the server using Django's server, assuming you install the dependencies:
   ```
-  pip install MySQLdb
   python manage.py runserver
   ```
 
