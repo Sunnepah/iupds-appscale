@@ -57,7 +57,7 @@ See the README file for directions. You'll need python 2.7 and [pip 7.0 or later
    uploaded to App Engine, where instead the bundled version is used. 
 
    requirements-vendor.txt includes dependencies that should be 'vendored', which means its completely included in the directory at
-   time of deployment. This can only be done for pure Python libraries that are not included in the App Engine sandbox, but not ones that require system libraries. In this case, Django is vendored since it's a pure Python library and that way we can install the latest version. These vendored libraires can be added
+   time of deployment. This can only be done for pure Python libraries that don't require system libraries. In this case, Django is vendored since it's a pure Python library and that way we can install the latest version. These vendored libraires can be added
    to the project using the `pip -t` flag, which installs it directly into the folder specified, in this case the `lib` folder. In order to make this project deployable directly after clone, the vendored libraries were already checked into this repo, but new ones can be added and then installed using the `pip -t flag`.
    ```
    # vendor Django directly into the project `lib` folder
