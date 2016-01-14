@@ -128,7 +128,7 @@ To deploy the application:
    appcfg.py -A <your-project-id> update app.yaml
    ```
 
-   or using the new [gcloud SDK](https://cloud.google.com/sdk/?hl=en) commands.
+   or using the new [gcloud SDK](https://cloud.google.com/sdk/?hl=en) commands. If you want to use the gcloud command line tool, you'll have to remove the version flag from app.yaml, which is now specified in the command line. You can also use the --version flag when deploying with appcfg.py.
    ```
    gcloud init # only required once
    gcloud preview app deploy app.yaml --promote
