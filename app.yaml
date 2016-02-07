@@ -14,18 +14,18 @@
 
 # This file specifies your Python application's runtime configuration.
 # See https://cloud.google.com/appengine/docs/managed-vms/config for details.
-
+application: iupds-app
 # [START django_app]
 runtime: python27
 api_version: 1
 threadsafe: yes
-version: 1
+version: 2
 
 handlers:
 - url: /static
   static_dir: static/
 - url: .*
-  script: mysite.wsgi.application
+  script: iupds.wsgi.application
 
 # Only pure Python libraries can be vendored
 # Python libraries that use C extensions can
