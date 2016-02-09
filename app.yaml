@@ -33,7 +33,7 @@ handlers:
 # as part of the AppEngine SDk
 libraries:
 - name: MySQLdb
-  version: 1.2.4b4
+  version: 1.2.5
 # [END django_app]
 - name: django
   version: "latest"
