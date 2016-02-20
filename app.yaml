@@ -18,14 +18,67 @@ application: iupds
 # [START django_app]
 runtime: python27
 api_version: 1
-threadsafe: yes
-version: 2
+threadsafe: no
+version: 3
 
 handlers:
+- url: /css
+  static_dir: static/css
+
+- url: /bower_components
+  static_dir: static/bower_components
+
+- url: /dist
+  static_dir: static/dist
+
+- url: /images
+  static_dir: static/images
+
+- url: /javascripts
+  static_dir: static/javascripts
+
+- url: /js
+  static_dir: static/js
+
+- url: /plugins
+  static_dir: static/plugins
+
+- url: /stylesheets
+  static_dir: static/stylesheets
+
 - url: /static
   static_dir: static/
+
+- url: /
+  login: required
+  script: iupds.wsgi.application
+
 - url: .*
   script: iupds.wsgi.application
+
+skip_files:
+
+- ^(.*/)?.*/assets/.*$
+- ^(.*/)?.*/build/.*$
+- ^(.*/)?.*/templates/.*$
+- ^(.*/)?.*/node_modules/.*$
+
+- ^(assets/.*)
+- ^(build/.*)
+- ^(templates/.*)
+- ^(node_modules/.*)
+- ^\.idea$
+- ^tools$
+
+- ^(.*/)?#.*#$
+- ^(.*/)?.*~$
+- ^(.*/)?.*\.DS_Store$
+- ^(.*/)?.*\.py[co]$
+- ^(.*/)?.*/RCS/.*$
+- ^(.*/)?\..*$
+
+#includes:
+#- secure_routes.yaml
 
 # Only pure Python libraries can be vendored
 # Python libraries that use C extensions can
@@ -33,10 +86,8 @@ handlers:
 # as part of the AppEngine SDk
 libraries:
 - name: MySQLdb
-  version: 1.2.5
+  version: 1.2.4b4
 # [END django_app]
-- name: django
-  version: "latest"
 
 env_variables:
   DJANGO_SETTINGS_MODULE: 'iupds.settings'
