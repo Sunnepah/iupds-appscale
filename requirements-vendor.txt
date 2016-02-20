@@ -1,1 +1,13 @@
 Django==1.9
+djangorestframework==3.3.2
+drf-nested-routers==0.9.0
+dj-static==0.0.6
+django-appconf==0.6
+django-filter
+django_extensions
+lxml
+fpconst
+soappy
+django-compressor==1.4
+django-tastypie==0.13.3
+importlib

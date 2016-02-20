@@ -3149,7 +3149,8 @@ django/views/generic/dates.py,sha256=8Yh1VXL6Alqbzj7XSWclHYOpsLhRDE3pVCL06z7ruh8
 django/views/generic/detail.py,sha256=Hc6oOTOiBzsaRJFbTo3uHAE3eHAHYWqxQM2u0fhuac4,6922
 django/views/generic/edit.py,sha256=TLyoj01wtDEcXQsYiNDbYE9B_nE1u4iu4Z2eKY-TpfI,11226
 django/views/generic/list.py,sha256=PZDFMJ7-q3F7HYLnGI8eoTeiL_jto3q0hUS-rq6jO7c,7630
-/var/folders/zs/2dg5c_bx5575bygz_kwpdstr0094y0/T/tmpOclIQC/bin/django-admin,sha256=7tGzsWHPoqCRFab9kzAO_mYTh5YXH2Nh02gtHvuyWBQ,265
+/var/folders/qr/5jc_9yrd2dvc24l2kw18_1bw0000gn/T/tmp4qW8Bn/bin/django-admin,sha256=JBgVl1iyATUq40SuUO9c6QkymKb267YKvty_QcTCKks,306
+/var/folders/qr/5jc_9yrd2dvc24l2kw18_1bw0000gn/T/tmp4qW8Bn/lib/python/Django-1.9.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
 django/utils/text.pyc,,
 django/conf/locale/ja/__init__.pyc,,
 django/contrib/gis/geos/prototypes/prepared.pyc,,

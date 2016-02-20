@@ -1,8 +1,10 @@
+static/lang
 # Global .gitignore
 .DS_Store
 *.pyc
 .gaedata
 
+# Python compiled byte code
 *.py[cod]
 *$py.class
 
@@ -40,6 +42,7 @@ pip-delete-this-directory.txt
 htmlcov/
 .tox/
 .coverage
+/lib
 .coverage.*
 .cache
 nosetests.xml
@@ -47,3 +50,17 @@ coverage.xml
 *,cover
 .hypothesis/
 
+# SQLite3 database
+*.sqlite3
+
+# Node modules
+node_modules/
+
+# Bower components
+static/bower_components/
+
+# Uglified JavaScript
+static/dist
+
+# Staticfiles
+staticfiles/

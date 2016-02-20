@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # [START vendor]
-from google.appengine.ext import vendor
+#from google.appengine.ext import vendor
+import vendor
 vendor.add('lib')
 # [END vendor]
