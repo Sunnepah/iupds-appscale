@@ -15,5 +15,6 @@
 * `$ npm install -g bower`
 * `$ npm install`
 * `$ bower install`
+* `$ gulp default`
 * `$ python manage.py migrate`
 * `$ python manage.py runserver`
