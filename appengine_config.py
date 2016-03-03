@@ -16,4 +16,5 @@
 #from google.appengine.ext import vendor
 import vendor
 vendor.add('lib')
+vendor.add('appscalehelper')
 # [END vendor]
