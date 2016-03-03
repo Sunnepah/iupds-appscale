@@ -7,7 +7,9 @@
       'iupds.routes',
       'iupds.authentication',
       'iupds.layout',
-      'iupds.dashboard',
+      'iupds.iupdsmanager',
+      'iupds.profiles',
+      'iupds.utils'
     ]);
 
   angular

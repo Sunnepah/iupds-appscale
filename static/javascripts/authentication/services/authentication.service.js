@@ -60,10 +60,10 @@
 
       /**
       * @name registerErrorFn
-      * @desc Log "Epic failure!" to the console
+      * @desc Log "Oops! failure!" to the console
       */
       function registerErrorFn(data, status, headers, config) {
-        console.error('Epic failure!');
+        console.error('Oops!, failure!');
       }
 
     }
@@ -93,10 +93,10 @@
 
       /**
        * @name loginErrorFn
-       * @desc Log "Epic failure!" to the console
+       * @desc Log "Oops!, Login failure!" to the console
        */
       function loginErrorFn(data, status, headers, config) {
-        console.error('Epic Login failure!');
+        console.error('Oops!, Login failure!');
       }
     }
 
@@ -150,7 +150,7 @@
      * @name logout
      * @desc Try to log the user out
      * @returns {Promise}
-     * @memberOf thinkster.authentication.services.Authentication
+     * @memberOf iupds.authentication.services.Authentication
      */
     function logout() {
       return $http.post('/api/v1/auth/logout/')
@@ -162,16 +162,15 @@
        */
       function logoutSuccessFn(data, status, headers, config) {
         Authentication.unauthenticate();
-
-        window.location = '/';
+        window.location = data.data.logout_url;
       }
 
       /**
        * @name logoutErrorFn
-       * @desc Log "Epic failure!" to the console
+       * @desc Log "Oops failure!" to the console
        */
       function logoutErrorFn(data, status, headers, config) {
-        console.error('Epic failure!');
+        console.error('Oops!, failure!');
       }
     }
 
