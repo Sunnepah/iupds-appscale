@@ -5,15 +5,17 @@ from django.db import models
 
 # Create your models here.
 class Profile(models.Model):
-    uid = models.BigIntegerField(unique=True, null=False)
-    email = models.EmailField(unique=True)
-    username = models.CharField(max_length=30, unique=True)
+    uid = models.BigIntegerField(blank=True)
+    user_id_old = models.PositiveIntegerField(unique=True, null=False)
+    email = models.EmailField(unique=True, null=False)
+    username = models.CharField(max_length=30, unique=True, null=False)
 
+    full_name = models.CharField(max_length=255, blank=True)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
 
     is_admin = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

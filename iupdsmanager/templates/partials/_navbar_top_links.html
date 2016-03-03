@@ -1,4 +1,4 @@
-<ul class="nav navbar-top-links navbar-right">
+<ul class="nav navbar-top-links navbar-right" ng-controller="NavbarController as vm">
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
             <i class="fa fa-envelope fa-fw"></i> <i class="fa fa-caret-down"></i>
@@ -8,13 +8,13 @@
     <!-- /.dropdown -->
     <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-user fa-fw"></i> Sunday Ayandokun <i class="fa fa-caret-down"></i>
+            <i class="fa fa-user fa-fw"></i> {{ vm.nickname }} <i class="fa fa-caret-down"></i>
         </a>
         <ul class="dropdown-menu dropdown-user">
             <li><a href="/profile"><i class="fa fa-user fa-fw"></i>Profile</a></li>
-            <li><a href="#"><i class="fa fa-gear fa-fw"></i> System </a></li>
+            <li><a href="/"><i class="fa fa-gear fa-fw"></i> System </a></li>
             <li class="divider"></li>
-            <li><a href="/logout"><i class="fa fa-sign-out fa-fw"></i> Logout</a></li>
+            <li><a href="javascript:void(0)" ng-click="vm.logout()"><i class="fa fa-sign-out fa-fw"></i> Logout</a></li>
         </ul>
         <!-- /.dropdown-user -->
     </li>

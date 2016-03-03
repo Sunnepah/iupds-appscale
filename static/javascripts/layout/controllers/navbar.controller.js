@@ -9,16 +9,19 @@
     .module('iupds.layout.controllers')
     .controller('NavbarController', NavbarController);
 
-  NavbarController.$inject = ['$scope', 'Authentication'];
+  NavbarController.$inject = ['$scope', '$cookies', 'Authentication'];
 
   /**
   * @namespace NavbarController
   */
-  function NavbarController($scope, Authentication) {
+  function NavbarController($scope, $cookies, Authentication) {
     var vm = this;
 
     vm.logout = logout;
 
+    // vm.nickname = JSON.parse($cookies.authenticatedAccount).user.nickname;
+    // console.log(vm.nickname);
+    // return vm.nickname
     /**
     * @name logout
     * @desc Log the user out

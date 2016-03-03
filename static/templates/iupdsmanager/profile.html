@@ -1,0 +1,20 @@
+<section class="content-header"><br>
+    <ol class="breadcrumb">
+        <li>
+            <a href="/"> <i class="livicon" data-name="home" data-size="16" data-color="#000"></i>Dashboard</a>
+        </li>
+        <li>
+            <a href=""> <i class="livicon" data-name="home" data-size="16" data-color="#000"></i>Middle</a>
+        </li>
+        <li class="active">Active</li>
+    </ol>
+</section>
+
+
+<div class="profile" ng-show="vm.profile">
+  <div class="jumbotron profile__header">
+    <h1 class="profile__email">{{ vm.profile.email }}</h1>
+    <p class="profile__nickname">{{ vm.profile.nickname }}</p>
+  </div>
+
+</div>

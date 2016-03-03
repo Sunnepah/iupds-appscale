@@ -15,19 +15,33 @@
     $routeProvider.when('/', {
       controller: 'DashboardController',
       controllerAs: 'vm',
-      templateUrl: '/static/templates/dashboard/dashboard.html'
-    }).when('/profile', {
+      templateUrl: '/static/templates/iupdsmanager/dashboard.html'
+    }).when('/profileold', {
       controller: 'DashboardController',
       controllerAs: 'vm',
-      templateUrl: '/static/templates/dashboard/profile.html'
+      templateUrl: '/static/templates/iupdsmanager/profile.html'
     }).when('/register', {
-      controller: 'RegisterController',
+      controller: 'DashboardController',
       controllerAs: 'vm',
-      templateUrl: '/static/templates/authentication/register.html'
+      templateUrl: '/static/templates/iupdsmanager/register.html'
     }).when('/login', {
       controller: 'LoginController',
       controllerAs: 'vm',
       templateUrl: '/static/templates/authentication/login.html'
+    }).when('/profile', {
+      controller: 'ProfileController',
+      controllerAs: 'vm',
+      templateUrl: '/static/templates/iupdsmanager/profile.html',
+      sp: {
+        authenticate: true
+      }
+    }).when('/profile/settings', {
+      controller: 'ProfileSettingsController',
+      controllerAs: 'vm',
+      templateUrl: '/static/templates/iupdsmanager/settings.html',
+      sp: {
+        authenticate: true
+      }
     }).otherwise('/', {
       controller: 'DashboardController',
       controllerAs: 'vm',
