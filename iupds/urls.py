@@ -18,16 +18,15 @@ from tastypie.api import Api
 from jobs.api import JobResource
 
 # from polls.views import index as pollIndex
-from iupdsmanager.views import index
-from iupds.views import IndexView
+from iupdsmanager.views import index, profile, create_user, logout
+# from iupds.views import IndexView
 
-# from rest_framework import routers
 from rest_framework_nested import routers
 
 from authentication.views import AccountViewSet, LoginView, LogoutView
 from posts.views import AccountPostsViewSet, PostViewSet
 
-# rest_framework API
+# account rest_framework API
 router = routers.SimpleRouter()
 router.register(r'accounts', AccountViewSet)
 
@@ -37,13 +36,13 @@ accounts_router = routers.NestedSimpleRouter(
 )
 accounts_router.register(r'posts', AccountPostsViewSet)
 
-# tastypie API
+# JOB tastypie API
 v1_api = Api(api_name='v1')
 v1_api.register(JobResource())
 
 
 urlpatterns = [
-    # url(r'^$', index),
+    url(r'^$', index),
     url(r'^polls/', include('polls.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^iupdsmanager/', include('iupdsmanager.urls')),
@@ -51,8 +50,10 @@ urlpatterns = [
     # url(r'^job/', include('jobs.urls')),
     url(r'^api/v1/', include(router.urls)),
     url(r'^api/v1/', include(accounts_router.urls)),
-    url('^.*$', IndexView.as_view(), name='index'),
+    # url('^.*$', IndexView.as_view(), name='index'),
     url(r'^api/v1/auth/login/$', LoginView.as_view(), name='login'),
-    url(r'^api/v1/auth/logout/$', LogoutView.as_view(), name='logout'),
-    # url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    # url(r'^api/v1/auth/logout/$', LogoutView.as_view(), name='logout'),
+    url(r'^api/v1/profile/$', profile, name='profile'),
+    url(r'^api/v1/create_user/$', create_user, name='create_user'),
+    url(r'^api/v1/auth/logout/$', logout, name='logout')
 ]
