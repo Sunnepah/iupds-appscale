@@ -11,3 +11,5 @@ soappy
 django-compressor==1.4
 django-tastypie==0.13.3
 importlib
+rdflib>=4.2.1
+simplejson==3.8.2
