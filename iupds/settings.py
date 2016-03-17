@@ -195,3 +195,9 @@ else:
     APPSCALE_HOME = BASE_DIR + "/lib/appscale"
 
 AUTH_USER_MODEL = 'authentication.Account'
+
+
+# VIRTUOSO SETTINGS
+SPARQL_ENDPOINT = "http://33.33.33.13:8890/sparql"
+VIRTUOSO_HOST = "33.33.33.13"
+VIRTUOSO_PORT = "8890"
