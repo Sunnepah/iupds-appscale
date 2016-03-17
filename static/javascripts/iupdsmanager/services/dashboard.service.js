@@ -23,7 +23,8 @@
         var Dashboard = {
 
             getCurrentUserProfile: getCurrentUserProfile,
-            register: register
+            register: register,
+            getGraphCount: getGraphCount
 
         };
 
@@ -46,6 +47,27 @@
         }
 
         function failureFn(data, status, headers, config) {
+            console.error('Error occurred');
+        }
+
+        function getGraphCount() {
+                //return $http.get('/api/v1/profile/', {
+                //}).then(successGraphFn, failureGraphFn);
+
+                $http.get('/api/v1/profile/')
+                          .then(function(result) {
+                            console.log(result.data);
+                });
+        }
+
+        function successGraphFn(data, status, headers, config) {
+
+            if(data.status == 200 && data.data.user.user_id && data.data.user.email) {
+                //return data.data;
+            }
+        }
+
+        function failureGraphFn(data, status, headers, config) {
             console.error('Error occurred');
         }
 

@@ -16,10 +16,14 @@
       controller: 'DashboardController',
       controllerAs: 'vm',
       templateUrl: '/static/templates/iupdsmanager/dashboard.html'
-    }).when('/profileold', {
-      controller: 'DashboardController',
+    }).when('/contact', {
+      controller: 'ContactController',
       controllerAs: 'vm',
-      templateUrl: '/static/templates/iupdsmanager/profile.html'
+      templateUrl: '/static/templates/iupdsmanager/contact.html'
+    }).when('/contact/details', {
+       controller: 'ContactDetailsController',
+       controllerAs: 'vm',
+       templateUrl: '/static/templates/iupdsmanager/contact_details.html'
     }).when('/register', {
       controller: 'DashboardController',
       controllerAs: 'vm',

@@ -9,7 +9,8 @@
       'iupds.layout',
       'iupds.iupdsmanager',
       'iupds.profiles',
-      'iupds.utils'
+      'iupds.utils',
+      'iupds.contact'
     ]);
 
   angular
