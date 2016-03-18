@@ -10,7 +10,7 @@ import cgi
 # Third-party imports
 import SOAPpy
 
-from key_name import KEY_NAME
+#from key_name import KEY_NAME
 from uaserver_host import UA_SERVER_IP
 from local_state import LocalState
 
@@ -121,9 +121,10 @@ class AppscaleUserClient:
         while 1:
             try:
                 result = self.server.get_user_data(username, self.secret)
-                break
+                print result
+                return result
             except Exception, exception:
-                print ("Exception when deleting user: {0}".format(exception))
+                print ("Exception when retrieving user: {0}".format(exception))
                 print ("Backing off and trying again")
                 time.sleep(10)
 
