@@ -3,9 +3,52 @@ HOST: http://iupds.ee/
 
 # IUPDS
 
-API description for request and response examples for pds 
+API description for request and response examples for pds
 
-## Emails [/{user_id}/emails]
+## Person [/{user_id}/persons]
+
+### Get Basic Personal Data [GET]
+
++ Response 200 (application/json)
+
+        {
+            format: "linked-data-api",
+            version: "1.0",
+            result: {
+                _about: "http://inforegister.ee/185804764220139124118/emails",
+                definition: "http://inforegister.ee/meta/user_id/_emails.json",
+                extendedMetadataVersion: "http://inforegister.ee/185804764220139124118/emails.json?_metadata=all",
+                first: "http://inforegister.ee/185804764220139124118/emails.json?_page=0",
+                hasPart: "http://inforegister.ee/185804764220139124118/emails.json",
+                isPartOf: "http://inforegister.ee/185804764220139124118/emails.json"
+                items: [
+                    {
+                        _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                        hasEmail: "mailto:sunday.ayandokun@ut.ee",
+                        type: "http://www.w3.org/2006/vcard/ns#School"
+                    },
+                    {
+                        _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
+                        hasEmail: "mailto:sunday.ayandokun@gmail.com",
+                        type: "http://www.w3.org/2006/vcard/ns#Personal"
+                    }
+                ],
+                itemsPerPage: 50,
+                page: 0,
+                startIndex: 1,
+                totalResults: 2,
+                type: [
+                    "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                    "http://purl.org/linked-data/api/vocab#Page"
+                ]
+            }
+        }
+        
++ Response 404 (application/json) 
+
+         []
+
+## Person Emails [/{user_id}/emails]
 
 ### Get Personal Emails [GET]
 
@@ -23,14 +66,14 @@ API description for request and response examples for pds
                 isPartOf: "http://inforegister.ee/185804764220139124118/emails.json"
                 items: [
                     {
-                    _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
-                    hasValue: "mailto:sunday.ayandokun@ut.ee",
-                    type: "http://www.w3.org/2006/vcard/ns#School"
+                        _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                        hasEmail: "mailto:sunday.ayandokun@ut.ee",
+                        type: "http://www.w3.org/2006/vcard/ns#School"
                     },
                     {
-                    _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
-                    hasValue: "mailto:sunday.ayandokun@gmail.com",
-                    type: "http://www.w3.org/2006/vcard/ns#Personal"
+                        _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
+                        hasEmail: "mailto:sunday.ayandokun@gmail.com",
+                        type: "http://www.w3.org/2006/vcard/ns#Personal"
                     }
                 ],
                 itemsPerPage: 50,
@@ -43,6 +86,36 @@ API description for request and response examples for pds
                 ]
             }
         }
+        
++ Response 404 (application/json) 
+
+         []
+         
+## A single Email [/{user_id}/emails/sunday-ayandokun-ut-ee]
+
+### Get Personal Email [GET]
+
++ Response 200 (application/json)
+
+        {
+            format: "linked-data-api",
+            version: "0.2",
+            result: {
+                _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json",
+                definition: "http://inforegister.ee/185804764220139124118/meta/emails/_email.json",
+                extendedMetadataVersion: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json?_metadata=all",
+                primaryTopic: {
+                    _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                    hasValue: "mailto:sunday.ayandokun@ut.ee",
+                    type: "http://www.w3.org/2006/vcard/ns#School"
+                },
+                type: [
+                    "http://purl.org/linked-data/api/vocab#ItemEndpoint",
+                    "http://purl.org/linked-data/api/vocab#Page"
+                ]
+            }
+        }
+        
 + Response 404 (application/json) 
 
          []
