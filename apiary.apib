@@ -1,374 +1,55 @@
 FORMAT: 1A
+HOST: http://iupds.ee/
 
-# STRS API
-This document specify a RESTFUL API for STRS 
+# IUPDS
 
-# TAXI ORDER GROUP
-This group handles Taxi Ordering
+API description for request and response examples for pds 
 
-## Query And Create Taxi Orders [/tos]
-### Query all Taxi orders [GET]
+## Emails [/{user_id}/emails]
 
-+ Response 200 (application/json) 
+### Get Personal Emails [GET]
 
-        [
-         {
-            "links":
-            [
-                {"rel":"self", "href":"http://private-anon-94b372ff8-strsapi1.apiary-mock.com/tos/10001"}
-            ], 
-            "CustomerID":21344,
-            "coordinateX":27821,
-            "coordinateY":15546,
-            "Status":"PENDING"
-         },
-         {
-            "links":
-            [
-                {"rel":"self", "href":"http://private-anon-94b372ff8-strsapi1.apiary-mock.com/tos/10003"}
-            ], 
-            "CustomerID":21344,
-            "coordinateX":27821,
-            "coordinateY":15546,
-            "Status":"PENDING"
-         },
-         {
-            "links":
-            [
-                {"rel":"self", "href":"http://private-anon-94b372ff8-strsapi1.apiary-mock.com/tos/10003"}
-            ], 
-            "CustomerID":21344,
-            "coordinateX":27821,
-            "coordinateY":15546,
-            "Status":"PENDING"
-         }
-        ]
-    
-+ Response 404 (application/json) 
-
-        []
-    
-### Create Taxi orders [POST]
-
-+ Request (application/json)
-        
-        [
-            "CustomerID":21344,
-            "coordinateX":27821,
-            "coordinateY":8383O
-        ]
-
-+ Response 201 (application/json) 
-
-        {
-            "links": [
-                {
-                    "rel": "RejectTO",
-                    "href": "http://localhost:8080/tos/1/accept",
-                    "method": "DELETE"
-                },
-                {
-                    "rel": "AcceptTO",
-                    "href": "http://localhost:8080/tos/1/accept",
-                    "method": "POST"
-                }
-                {
-                    "rel": "self",
-                    "href": "http://localhost:8080/tos/1"
-                }
-            ],
-            "customerID": "ES232",
-            "coordinateX": "170",
-            "coordinateY": "83",
-            "Status":"PENDING"
-            
-        }
-    
-## Handling each Order [/tos/{to.id}]
-### Get specific taxi order [GET]
-
-+ Parameters
-    + to.id (required, 1)          ... TO id
-    
 + Response 200 (application/json)
 
         {
-            "links": [
-                {
-                    "rel": "RejectTO",
-                    "href": "http://localhost:8080/tos/1/accept",
-                    "method": "DELETE"
-                },
-                {
-                    "rel": "AcceptTO",
-                    "href": "http://localhost:8080/tos/1/accept",
-                    "method": "POST"
-                }
-                {
-                    "rel": "self",
-                    "href": "http://localhost:8080/tos/1"
-                }
-            ],
-            "customerID": "ES232",
-            "coordinateX": "170",
-            "coordinateY": "83",
-            "Status":"PENDING"
-            
+            format: "linked-data-api",
+            version: "1.0",
+            result: {
+                _about: "http://inforegister.ee/185804764220139124118/emails",
+                definition: "http://inforegister.ee/meta/user_id/_emails.json",
+                extendedMetadataVersion: "http://inforegister.ee/185804764220139124118/email.json?_metadata=all",
+                first: "http://inforegister.ee/185804764220139124118/email.json?_page=0",
+                hasPart: "http://inforegister.ee/185804764220139124118/email.json",
+                isPartOf: "http://inforegister.ee/185804764220139124118/email.json"
+                items: [
+                    {
+                    _about: "https://graph.ir.ee/emails/artur-eginvest-ee",
+                    hasValue: "mailto:artur@eginvest.ee",
+                    type: "http://www.w3.org/2006/vcard/ns#Work"
+                    },
+                    {
+                    _about: "https://graph.ir.ee/emails/info-eg-ee",
+                    hasValue: "mailto:info@eg.ee",
+                    type: "http://www.w3.org/2006/vcard/ns#Work"
+                    },
+                    {
+                    _about: "https://graph.ir.ee/emails/urmas-eg-ee",
+                    hasValue: "mailto:urmas@eg.ee",
+                    type: "http://www.w3.org/2006/vcard/ns#Work"
+                    },
+                    {
+                    _about: "https://graph.ir.ee/emails/vedu-eg-ee",
+                    hasValue: "mailto:vedu@eg.ee",
+                    type: "http://www.w3.org/2006/vcard/ns#Work"
+                    }
+                ],
+                itemsPerPage: 50,
+                page: 0,
+                startIndex: 1,
+                totalResults: 2,
+                type: [
+                    "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                    "http://purl.org/linked-data/api/vocab#Page"
+                ]
+            }
         }
-        
-+ Response 404 (application/json)
-
-        []
-
-### Update Taxi Order [PUT]    
-+ Request (application/json)
-        
-        {}
-
-+ Response 200 (application/json) 
-
-        {}
-
-### Delete Taxi Order [DELETE]
-+ Parameters
-    + id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-
-   
-## Accept and Reject Order [/tos/{to.id}/accept]
-### Accept Taxi Order [POST]
-+ Parameters
-    + id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-
-### Reject Taxi Order [DELETE]
-+ Parameters
-    + id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-    
-## Pick Up Customer [/tos/{to.id}/pickup]
-### Pick Up Customer [PUT]
-+ Parameters
-    + to.id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-    
-## Drop off Customer [/tos/{to.id}/dropoff]
-### Drop off Customer [PUT]
-+ Parameters
-    + to.id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-
-
-# Group Customer
-This is customer group
-
-## Managing Customers [/customers]
-### Get all Customers [GET]
-
-+ Response 200 (application/json)
-
-        {}
-        
-+ Response 404 (application/json)
-        
-        []
-
-### Create new customer  [POST]
-
-+ Request (application/json)
-        
-        []
-
-+ Response 201 (application/json) 
-
-        {} 
-
-## Managing Customer [/customers/{customer.id}]
-### Get a Customer [GET]
-+ Parameters
-    + customer.id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-
-### Update customer [PUT]
-+ Request (application/json)
-        
-        {}
-
-+ Response 200 (application/json) 
-
-        {}
-
-### Delete customer [DELETE]
-+ Parameters
-    + customer.id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-        
-
-# Group Taxis
-This group manage Taxi
-
-## Manage Taxis [/taxi]
-### Get all Taxis [GET]
-
-+ Response 200 (applicayion/json)
-
-        []
-
-+ Response 404 (application/json)
-
-        []
-
-### Create new Taxi [POST]
-
-+ Request (application/json)
-        
-        {}
-
-+ Response 200 (application/json) 
-
-        {}
-        
-## Manage a Taxi [/taxis/{taxi.id}] 
-### Get a taxi [GET]
-
-+ Parameters
-    + taxi.id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-        
-### Update Taxi [PUT]
-+ Request (application/json)
-        
-        {}
-
-+ Response 200 (application/json) 
-
-        {}
-        
-### Delete a Taxi [DELETE]
-
-+ Parameters
-    + taxi.id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-        
-        
-# Group Drivers
-## Managing Drivers [/drivers]
-### Get all drivers [GET]
-
-+ Response 200 (application/json)
-
-        []
-
-+ Response 404 (application/json)
-
-        []
-
-### Create new driver [POST]
-
-+ Request (application/json)
-        
-        {}
-
-+ Response 200 (application/json) 
-
-        {}
-
-## Managing a driver [/drivers/{driver.id}]
-### Get a driver [GET]
-
-+ Parameters
-    + driver.id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
-
-### Update driver [PUT]
-
-+ Request (application/json)
-        
-        {}
-
-+ Response 200 (application/json) 
-
-        {}
-
-### Delete driver [DELETE]
-
-+ Parameters
-    + driver.id (required, 10001)
-    
-+ Response 200 (application/json) 
-
-        {}
-    
-+ Response 404 (application/json) 
-
-        {}
