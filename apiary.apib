@@ -171,7 +171,7 @@ API description for request and response examples for pds
         [
         ]
 
-## Person Address [/{user_id}/addresses]
+## Person Addresses [/{user_id}/addresses]
 
 ### Get Personal Addresses [GET]
 
@@ -199,6 +199,78 @@ API description for request and response examples for pds
                             "street-address": [
                                 "Akadeemia Tee 7/2 418B"
                             ]
+                        }
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+    
++ Response 404 (application/json) 
+
+        [
+        ]
+
+## Person Accounts [/{user_id}/accounts]
+
+### Get Personal Addresses [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/accounts",
+                    "definition": "http://inforegister.ee/meta/user_id/_accounts.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/accounts.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/accounts.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/accounts.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/accounts.json"
+                    "items": [
+                        {
+                            "_about": "http://inforegister.ee/sunday-ayandokun",
+                            "accountServiceHomepage": "http://inforegister.ee",
+                            "accountName": "Sunday Ayandokun",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount",
+                                "http://xmlns.com/foaf/0.1/OnlineEcommerceAccount"
+                            ],
+                            "created": "2006-09-07T09:33:30Z",
+                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "aimChatID": ""
+                        },
+                        {
+                            "_about": "http://www.twitter.com/sundayayandokun",
+                            "accountServiceHomepage": "http://inforegister.ee",
+                            "accountName": "Sunday Ayandokun",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount",
+                                "http://xmlns.com/foaf/0.1/OnlineChatAccount"
+                            ],
+                            "created": "2006-09-07T09:33:30Z",
+                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "aimChatID": "sundayayandokun"
+                        },
+                        {
+                            "_about": "http://www.xbox.com/live/sunnepah",
+                            "accountServiceHomepage": "http://www.xbox.com/live",
+                            "accountName": "sunday.ayandokun@live.com",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount",
+                                "http://xmlns.com/foaf/0.1/OnlineGamingAccount"
+                            ],
+                            "created": "2006-09-07T09:33:30Z",
+                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "aimChatID": "sunday.ayandokun@live.com"
                         }
                     ],
                     "itemsPerPage": 50,
