@@ -17,6 +17,6 @@
 import vendor
 vendor.add('lib')
 vendor.add('appscalehelper')
-vendor.add('sparqlwrapper')
+vendor.add('SPARQLWrapper')
 vendor.add('virtuoso')
 # [END vendor]
