@@ -1,5 +1,4 @@
 FORMAT: 1A
-HOST: http://iupds.ee/
 
 # IUPDS
 
@@ -34,15 +33,12 @@ API description for request and response examples for pds
                             "nick": "sunnepah",
                             "openid": "sunnepah",
                             "homepage": "https://about.me/sunnepah",
-                            "account": [
-                                "http://inforegister.ee/accounts/sunday-ayandokun",
-                                "http://www.twitter.com/sundayayandokun",
-                                "http://www.xbox.com/live/sunnepah"
-                            ],
+                            "account": "http://inforegister.ee/185804764220139124118/accounts"
                             "identifier": "185804764220139124118",
                             "created": "2016-03-09T12:25:10Z",
                             "modified": "2016-03-09T12:25:10Z"
-                        }
+                        },
+                        "hasContract": "http://inforegister.ee/185804764220139124118/public-contracts"
                     }
                 ]
             }
@@ -220,7 +216,7 @@ API description for request and response examples for pds
 
 ## Person Accounts [/{user_id}/accounts]
 
-### Get Personal Addresses [GET]
+### Get Personal Accounts [GET]
 
 + Response 200 (application/json)
 
@@ -271,6 +267,55 @@ API description for request and response examples for pds
                             "created": "2006-09-07T09:33:30Z",
                             "has_function": "http://inforegister.ee/userType/Registered",
                             "aimChatID": "sunday.ayandokun@live.com"
+                        }
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+    
++ Response 404 (application/json) 
+
+        [
+        ]
+
+## Public Contract [/{user_id}/public-contracts]
+
+### Get Public Contract [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/public-contracts",
+                    "definition": "http://inforegister.ee/meta/user_id/_public-contracts.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/public-contracts.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/public-contracts.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/public-contracts.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/public-contracts.json"
+                    "items": [
+                        {
+                            "_about": "https://inforegister.ee/public-contracts/123435353-24253253532",
+                            "title": "Inforegister Contract",
+                            "description": "A contract for service offer",
+                            "durationDays": "365",
+                            "startDate": "2015-12-04",
+                            "actualEndDate": "2016-12-03",
+                            "cancellationDate": "",
+                            "confirmation-type": "Confirmed",
+                            "contractPrice": "12.99",
+                            "attachment": "http://xyz.ee/public-contracts/document/20140929144237_contract-ir20-bogmqyq.docx",
+                            "creator": ""
                         }
                     ],
                     "itemsPerPage": 50,
