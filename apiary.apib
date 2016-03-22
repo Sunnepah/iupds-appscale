@@ -12,41 +12,40 @@ API description for request and response examples for pds
 + Response 200 (application/json)
 
         {
-            format: "linked-data-api",
-            version: "1.0",
-            result: {
-                _about: "http://inforegister.ee/185804764220139124118/emails",
-                definition: "http://inforegister.ee/meta/user_id/_emails.json",
-                extendedMetadataVersion: "http://inforegister.ee/185804764220139124118/emails.json?_metadata=all",
-                first: "http://inforegister.ee/185804764220139124118/emails.json?_page=0",
-                hasPart: "http://inforegister.ee/185804764220139124118/emails.json",
-                isPartOf: "http://inforegister.ee/185804764220139124118/emails.json"
-                items: [
-                    {
-                        _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
-                        hasEmail: "mailto:sunday.ayandokun@ut.ee",
-                        type: "http://www.w3.org/2006/vcard/ns#School"
-                    },
-                    {
-                        _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
-                        hasEmail: "mailto:sunday.ayandokun@gmail.com",
-                        type: "http://www.w3.org/2006/vcard/ns#Personal"
-                    }
-                ],
-                itemsPerPage: 50,
-                page: 0,
-                startIndex: 1,
-                totalResults: 2,
-                type: [
-                    "http://purl.org/linked-data/api/vocab#ListEndpoint",
-                    "http://purl.org/linked-data/api/vocab#Page"
-                ]
-            }
+            "format": "linked-data-api",
+            "version": "1.0",
+            "result": {
+                "_about": "http://inforegister.ee/185804764220139124118/persons",
+                "definition": "http://inforegister.ee/meta/user_id/_persons.json",
+                "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/persons.json?_metadata=all",
+                "primaryTopic": {
+                    "_about": "http://inforegister.ee/185804764220139124118/persons",
+                    "id": "185804764220139124118",
+                    "name": "Sunday Ayandokun",
+                    "givenname": "Sunday",
+                    "family_name": "Ayandokun",
+                    "title": "Professor",
+                    "birthday": "08-05",
+                    "gender": "M",
+                    "img": "http://gravatar.com/sunnepah/sunday_2015.jpg",
+                    "nick": "sunnepah",
+                    "openid": "sunnepah",
+                    "homepage": "https://about.me/sunnepah",
+                    "account": [
+                        "http://inforegister.ee/accounts/sunday-ayandokun",
+                        "http://www.twitter.com/sundayayandokun",
+                        "http://www.xbox.com/live/sunnepah"
+                    ],
+                    "identifier": "185804764220139124118",
+                    "created": "2016-03-09T12:25:10Z",
+                    "modified": "2016-03-09T12:25:10Z"
+                },
         }
         
 + Response 404 (application/json) 
 
          []
+
 
 ## Person Emails [/{user_id}/emails]
 
@@ -55,32 +54,32 @@ API description for request and response examples for pds
 + Response 200 (application/json)
 
         {
-            format: "linked-data-api",
-            version: "1.0",
-            result: {
-                _about: "http://inforegister.ee/185804764220139124118/emails",
-                definition: "http://inforegister.ee/meta/user_id/_emails.json",
-                extendedMetadataVersion: "http://inforegister.ee/185804764220139124118/emails.json?_metadata=all",
-                first: "http://inforegister.ee/185804764220139124118/emails.json?_page=0",
-                hasPart: "http://inforegister.ee/185804764220139124118/emails.json",
-                isPartOf: "http://inforegister.ee/185804764220139124118/emails.json"
-                items: [
+            "format": "linked-data-api",
+            "version": "1.0",
+            "result": {
+                "_about": "http://inforegister.ee/185804764220139124118/emails",
+                "definition": "http://inforegister.ee/meta/user_id/_emails.json",
+                "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/emails.json?_metadata=all",
+                "first": "http://inforegister.ee/185804764220139124118/emails.json?_page=0",
+                "hasPart": "http://inforegister.ee/185804764220139124118/emails.json",
+                "isPartOf": "http://inforegister.ee/185804764220139124118/emails.json"
+                "items": [
                     {
-                        _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
-                        hasEmail: "mailto:sunday.ayandokun@ut.ee",
-                        type: "http://www.w3.org/2006/vcard/ns#School"
+                        "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                        "hasValue": "mailto:sunday.ayandokun@ut.ee",
+                        "type": "http://www.w3.org/2006/vcard/ns#School"
                     },
                     {
-                        _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
-                        hasEmail: "mailto:sunday.ayandokun@gmail.com",
-                        type: "http://www.w3.org/2006/vcard/ns#Personal"
+                        "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
+                        "hasValue": "mailto:sunday.ayandokun@gmail.com",
+                        "type": "http://www.w3.org/2006/vcard/ns#Personal"
                     }
                 ],
-                itemsPerPage: 50,
-                page: 0,
-                startIndex: 1,
-                totalResults: 2,
-                type: [
+                "itemsPerPage": 50,
+                "page": 0,
+                "startIndex": 1,
+                "totalResults": 2,
+                "type": [
                     "http://purl.org/linked-data/api/vocab#ListEndpoint",
                     "http://purl.org/linked-data/api/vocab#Page"
                 ]
@@ -98,19 +97,62 @@ API description for request and response examples for pds
 + Response 200 (application/json)
 
         {
-            format: "linked-data-api",
-            version: "0.2",
-            result: {
-                _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json",
-                definition: "http://inforegister.ee/185804764220139124118/meta/emails/_email.json",
-                extendedMetadataVersion: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json?_metadata=all",
-                primaryTopic: {
-                    _about: "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
-                    hasValue: "mailto:sunday.ayandokun@ut.ee",
-                    type: "http://www.w3.org/2006/vcard/ns#School"
+            "format": "linked-data-api",
+            "version": "0.2",
+            "result": {
+                "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json",
+                "definition": "http://inforegister.ee/185804764220139124118/meta/emails/_email.json",
+                "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json?_metadata=all",
+                "primaryTopic": {
+                    "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                    "hasValue": "mailto:sunday.ayandokun@ut.ee",
+                    "type": "http://www.w3.org/2006/vcard/ns#School"
                 },
-                type: [
+                "type": [
                     "http://purl.org/linked-data/api/vocab#ItemEndpoint",
+                    "http://purl.org/linked-data/api/vocab#Page"
+                ]
+            }
+        }
+        
++ Response 404 (application/json) 
+
+         []
+         
+## Person Telephones [/{user_id}/telephones]
+
+### Get Personal Telephones [GET]
+
++ Response 200 (application/json)
+
+        {
+            "format": "linked-data-api",
+            "version": "1.0",
+            "result": {
+                "_about": "http://inforegister.ee/185804764220139124118/telephones",
+                "definition": "http://inforegister.ee/meta/user_id/_telephones.json",
+                "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/telephones.json?_metadata=all",
+                "first": "http://inforegister.ee/185804764220139124118/telephones.json?_page=0",
+                "hasPart": "http://inforegister.ee/185804764220139124118/telephones.json",
+                "isPartOf": "http://inforegister.ee/185804764220139124118/telephones.json"
+                "items": [
+                    {
+                        "_about": "http://inforegister.ee/185804764220139124118/telephones/0037256724770",
+                        "hasValue": "mailto:sunday.ayandokun@ut.ee",
+                        "type": "http://www.w3.org/2006/vcard/ns#School"
+                    },
+                    {
+                        "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
+                        "hasEmail": "mailto:sunday.ayandokun@gmail.com",
+                        "type": "http://www.w3.org/2006/vcard/ns#Personal"
+                    }
+                ],
+                "itemsPerPage": 50,
+                "page": 0,
+                "startIndex": 1,
+                "totalResults": 2,
+                "type": [
+                    "http://purl.org/linked-data/api/vocab#ListEndpoint",
                     "http://purl.org/linked-data/api/vocab#Page"
                 ]
             }
