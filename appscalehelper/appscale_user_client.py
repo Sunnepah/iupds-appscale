@@ -10,9 +10,10 @@ import cgi
 # Third-party imports
 import SOAPpy
 
-#from key_name import KEY_NAME
+from key_name import KEY_NAME
 from uaserver_host import UA_SERVER_IP
 from local_state import LocalState
+from iupds import settings
 
 
 class AppscaleUserClient:
@@ -83,7 +84,7 @@ class AppscaleUserClient:
         """
         self.host = self.UA_SERVER_IP
         self.server = SOAPpy.SOAPProxy('https://%s:%s' % (self.host, self.PORT))
-        self.secret = LocalState.get_secret_key(KEY_NAME)
+        self.secret = settings.APPSC_KEY  # LocalState.get_secret_key(KEY_NAME)
 
         # Disable certificate verification for Python 2.7.9.
         if hasattr(ssl, '_create_unverified_context'):
