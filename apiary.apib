@@ -334,3 +334,43 @@ API description for request and response examples for pds
 
         [
         ]
+        
+## Person Monitoring [/185804764220139124118/monitoring-organizations]
+
+### Get Personal Accounts [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/monitoring-organizations",
+                    "definition": "http://inforegister.ee/meta/user_id/_monitoring-organizations.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json"
+                    "items": [
+                        {
+                            "_about": "https://graph.ir.ee/ee-11111111",
+                        },
+                      
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+    
++ Response 404 (application/json) 
+
+        [
+        ]
