@@ -1,0 +1,376 @@
+FORMAT: 1A
+
+# IUPDS
+
+API description for request and response examples for pds
+
+## Person [/185804764220139124118/persons]
+
+### Get Basic Personal Data [GET]
+
++ Response 200 (application/json)
+
+ 
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": [
+                    {
+                        "_about": "http://inforegister.ee/185804764220139124118/persons",
+                        "definition": "http://inforegister.ee/meta/user_id/_persons.json",
+                        "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/persons.json?_metadata=all",
+                        "primaryTopic": {
+                            "_about": "http://inforegister.ee/185804764220139124118/persons",
+                            "id": "185804764220139124118",
+                            "name": "Sunday Ayandokun",
+                            "givenname": "Sunday",
+                            "family_name": "Ayandokun",
+                            "title": "Professor",
+                            "birthday": "08-05",
+                            "gender": "M",
+                            "img": "http://gravatar.com/sunnepah/sunday_2015.jpg",
+                            "nick": "sunnepah",
+                            "openid": "sunnepah",
+                            "homepage": "https://about.me/sunnepah",
+                            "account": "http://inforegister.ee/185804764220139124118/accounts",
+                            "identifier": "185804764220139124118",
+                            "created": "2016-03-09T12:25:10Z",
+                            "modified": "2016-03-09T12:25:10Z"
+                        },
+                        "hasContract": "http://inforegister.ee/185804764220139124118/public-contracts"
+                    }
+                ]
+            }
+        ]  
+ 
++ Response 404 (application/json) 
+
+        
+        [
+        ]
+
+## Person Emails [/185804764220139124118/emails]
+
+### Get Personal Emails [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/emails",
+                    "definition": "http://inforegister.ee/meta/user_id/_emails.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/emails.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/emails.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/emails.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/emails.json",
+                    "items": [
+                        {
+                            "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                            "hasValue": "mailto:sunday.ayandokun@ut.ee",
+                            "type": "http://www.w3.org/2006/vcard/ns#School"
+                        },
+                        {
+                            "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
+                            "hasValue": "mailto:sunday.ayandokun@gmail.com",
+                            "type": "http://www.w3.org/2006/vcard/ns#Personal"
+                        }
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 2,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+        
++ Response 404 (application/json) 
+
+        [
+        ]
+ 
+## A single Email [/185804764220139124118/emails/sunday-ayandokun-ut-ee]
+
+### Get Personal Email [GET]
+
++ Response 200 (application/json)
+
+        {
+            "format": "linked-data-api",
+            "version": "0.2",
+            "result": {
+                "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json",
+                "definition": "http://inforegister.ee/185804764220139124118/meta/emails/_email.json",
+                "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json?_metadata=all",
+                "primaryTopic": {
+                    "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                    "hasValue": "mailto:sunday.ayandokun@ut.ee",
+                    "type": "http://www.w3.org/2006/vcard/ns#School"
+                },
+                "type": [
+                    "http://purl.org/linked-data/api/vocab#ItemEndpoint",
+                    "http://purl.org/linked-data/api/vocab#Page"
+                ]
+            }
+        }
+        
++ Response 404 (application/json) 
+
+        [
+        ]
+
+## Person Telephones [/185804764220139124118/telephones]
+
+### Get Personal Telephones [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/telephones",
+                    "definition": "http://inforegister.ee/meta/user_id/_telephones.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/telephones.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/telephones.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/telephones.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/telephones.json"
+                    "items": [
+                        {
+                            "_about": "http://inforegister.ee/185804764220139124118/telephones/0037256724770",
+                            "hasValue": "tel:+37256724770",
+                            "type": "http://www.w3.org/2006/vcard/ns#Office"
+                        }
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+
++ Response 404 (application/json) 
+
+        [
+        ]
+
+## Person Addresses [/185804764220139124118/addresses]
+
+### Get Personal Addresses [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/addresses",
+                    "definition": "http://inforegister.ee/meta/user_id/_addresses.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/addresses.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/addresses.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/addresses.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/addresses.json"
+                    "items": [
+                        {
+                            "_about": "http://inforegister.ee/185804764220139124118/addresses/akadeemia-tee-7-2-418b",
+                            "country-name": "Estonia",
+                            "locality": "Tallinn",
+                            "postal-code": [
+                            "12611"
+                            ],
+                            "street-address": [
+                                "Akadeemia Tee 7/2 418B"
+                            ]
+                        }
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+    
++ Response 404 (application/json) 
+
+        [
+        ]
+
+## Person Accounts [/185804764220139124118/accounts]
+
+### Get Personal Accounts [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/accounts",
+                    "definition": "http://inforegister.ee/meta/user_id/_accounts.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/accounts.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/accounts.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/accounts.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/accounts.json"
+                    "items": [
+                        {
+                            "_about": "http://inforegister.ee/sunday-ayandokun",
+                            "accountServiceHomepage": "http://inforegister.ee",
+                            "accountName": "Sunday Ayandokun",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount",
+                                "http://xmlns.com/foaf/0.1/OnlineEcommerceAccount"
+                            ],
+                            "created": "2006-09-07T09:33:30Z",
+                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "aimChatID": ""
+                        },
+                        {
+                            "_about": "http://www.twitter.com/sundayayandokun",
+                            "accountServiceHomepage": "http://inforegister.ee",
+                            "accountName": "Sunday Ayandokun",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount",
+                                "http://xmlns.com/foaf/0.1/OnlineChatAccount"
+                            ],
+                            "created": "2006-09-07T09:33:30Z",
+                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "aimChatID": "sundayayandokun"
+                        },
+                        {
+                            "_about": "http://www.xbox.com/live/sunnepah",
+                            "accountServiceHomepage": "http://www.xbox.com/live",
+                            "accountName": "sunday.ayandokun@live.com",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount",
+                                "http://xmlns.com/foaf/0.1/OnlineGamingAccount"
+                            ],
+                            "created": "2006-09-07T09:33:30Z",
+                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "aimChatID": "sunday.ayandokun@live.com"
+                        }
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+    
++ Response 404 (application/json) 
+
+        [
+        ]
+
+## Public Contract [/185804764220139124118/public-contracts]
+
+### Get Public Contract [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/public-contracts",
+                    "definition": "http://inforegister.ee/meta/user_id/_public-contracts.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/public-contracts.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/public-contracts.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/public-contracts.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/public-contracts.json",
+                    "items": [
+                        {
+                            "_about": "https://inforegister.ee/public-contracts/123435353-24253253532",
+                            "title": "Inforegister Contract",
+                            "description": "A contract for service offer",
+                            "durationDays": "365",
+                            "startDate": "2015-12-04",
+                            "actualEndDate": "2016-12-03",
+                            "cancellationDate": "",
+                            "confirmation-type": "Confirmed",
+                            "contractPrice": "12.99",
+                            "attachment": "http://xyz.ee/public-contracts/document/20140929144237_contract-ir20-bogmqyq.docx",
+                            "creator": ""
+                        }
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+    
++ Response 404 (application/json) 
+
+        [
+        ]
+        
+## Monitoring [/185804764220139124118/monitoring-organizations]
+
+### Get Monitoring [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/monitoring-organizations",
+                    "definition": "http://inforegister.ee/meta/user_id/_monitoring-organizations.json",
+                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json?_metadata=all",
+                    "first": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json?_page=0",
+                    "hasPart": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json",
+                    "isPartOf": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json"
+                    "items": [
+                        {
+                            "_about": "https://graph.ir.ee/organizations/ee-11111111",
+                        },
+                      
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+    
++ Response 404 (application/json) 
+
+        [
+        ]
