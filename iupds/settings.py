@@ -194,10 +194,21 @@ if APPSCALE_HOME:
 else:
     APPSCALE_HOME = BASE_DIR + "/lib/appscale"
 
+APPSC_KEY = 'app_secret'
+
 AUTH_USER_MODEL = 'authentication.Account'
 
 
 # VIRTUOSO SETTINGS
 SPARQL_ENDPOINT = "http://33.33.33.13:8890/sparql"
+SPARQL_AUTH_ENDPOINT = "http://33.33.33.13:8890/sparql-auth"
+
 VIRTUOSO_HOST = "33.33.33.13"
 VIRTUOSO_PORT = "8890"
+VIRTUOSO_USER = "dba"
+VIRTUOSO_PASSW = "dba"
+
+GRAPH_USER = '185804764220139124118'
+GRAPH_USER_PW = '1234567'
+
+GRAPH_ROOT = 'http://inforegister.ee'
