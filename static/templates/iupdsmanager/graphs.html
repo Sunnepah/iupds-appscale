@@ -1,0 +1,25 @@
+<section class="content-header"><br>
+    <ol class="breadcrumb">
+        <li>
+            <a href="/"> <i class="livicon" data-name="home" data-size="16" data-color="#000"></i>Dashboard</a>
+        </li>
+        <li class="active">Manage graphs</li>
+    </ol>
+</section>
+
+<div ng-controller="DashboardController as vm">
+<div class="graphs" ng-show="vm.graphs">
+    <div class="panel panel-default">
+      <div class="panel-body">
+          <table class="table">
+              <tr>
+                  <td><button type="button" class="btn btn-success pull-right" ng-click="vm.createGraphs()">Create Graphs</button></td>
+              </tr>
+              <tr>
+                <td><button type="button" class="btn btn-danger pull-right" ng-click="vm.dropGraphs()">Delete Graphs</button></td>
+            </tr>
+          </table>
+      </div>
+    </div>
+</div>
+</div>

@@ -141,7 +141,6 @@ class LocalState(object):
         Returns:
           A str containing the secret key.
         """
-        # /Users/sunnepah/.appscale/appscalee84eec16c3f8410896423d6424f998e2.secret
         with open(cls.get_secret_key_location(keyname), 'r') as file_handle:
             return file_handle.read()
 
@@ -159,10 +158,3 @@ class LocalState(object):
         """
         return LOCAL_APPSCALE_PATH + keyname + ".secret"
 
-    # @classmethod
-    # def get_key(cls):
-    #     return '3052c495937548e8a4b48f0972fa9556'
-    #     # 3052c495937548e8a4b48f0972fa9556
-    #     # keyname = '/Users/sunnepah/.appscale/appscalee84eec16c3f8410896423d6424f998e2.secret'
-    #     # with open(keyname, 'r') as file_handle:
-    #     #    return file_handle.read()

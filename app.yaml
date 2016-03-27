@@ -14,7 +14,7 @@
 
 # This file specifies your Python application's runtime configuration.
 # See https://cloud.google.com/appengine/docs/managed-vms/config for details.
-application: iupds-latest
+application: iupds-210
 # [START django_app]
 runtime: python27
 api_version: 1
@@ -90,6 +90,8 @@ libraries:
 # [END django_app]
 - name: ssl
   version: latest
+- name: pycrypto
+  version: "latest"
 
 env_variables:
   DJANGO_SETTINGS_MODULE: 'iupds.settings'

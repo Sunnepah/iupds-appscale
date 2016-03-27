@@ -1,0 +1,24 @@
+<section class="content-header"><br>
+    <ol class="breadcrumb">
+        <li>
+            <a href="/"> <i class="livicon" data-name="home" data-size="16" data-color="#000"></i>Dashboard</a>
+        </li>
+        <li>
+            <a href="/contact/details"> <i class="livicon" data-name="home" data-size="16" data-color="#000"></i>Contact
+                details</a>
+        </li>
+        <li class="active">Active</li>
+    </ol>
+</section>
+
+
+<div class="contact" ng-show="vm.contacts">
+<pre>
+  <code>
+      {{ vm.contacts.telephone }} <hr>
+      {{ vm.contacts.email }} <hr>
+      {{ vm.contacts.address }} <hr>
+      {{ vm.contacts.person }}
+  </code>
+</pre>
+</div>

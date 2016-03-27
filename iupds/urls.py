@@ -18,12 +18,13 @@ from tastypie.api import Api
 from jobs.api import JobResource
 
 # from polls.views import index as pollIndex
-from iupdsmanager.views import index, profile, create_user, logout
+from iupdsmanager.views import index, profile, create_user, logout,\
+    create_contact, contact_details, my_contacts, create_graphs, drop_graphs
 # from iupds.views import IndexView
 
 from rest_framework_nested import routers
 
-from authentication.views import AccountViewSet, LoginView, LogoutView
+from authentication.views import AccountViewSet, LoginView
 from posts.views import AccountPostsViewSet, PostViewSet
 
 # account rest_framework API
@@ -54,6 +55,11 @@ urlpatterns = [
     url(r'^api/v1/auth/login/$', LoginView.as_view(), name='login'),
     # url(r'^api/v1/auth/logout/$', LogoutView.as_view(), name='logout'),
     url(r'^api/v1/profile/$', profile, name='profile'),
+    url(r'^api/v1/contact/$', create_contact, name='create_contact'),
+    url(r'^api/v1/contact/details$', contact_details, name='contact_details'),
+    url(r'^api/v1/mycontacts/$', my_contacts, name='mycontacts'),
     url(r'^api/v1/create_user/$', create_user, name='create_user'),
+    url(r'^api/v1/drop_graphs/$', drop_graphs, name='drop_graphs'),
+    url(r'^api/v1/create_graphs/$', create_graphs, name='create_graphs'),
     url(r'^api/v1/auth/logout/$', logout, name='logout')
 ]
