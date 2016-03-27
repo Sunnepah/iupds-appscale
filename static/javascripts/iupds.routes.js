@@ -16,6 +16,10 @@
       controller: 'DashboardController',
       controllerAs: 'vm',
       templateUrl: '/static/templates/iupdsmanager/dashboard.html'
+    }).when('/graphs', {
+      controller: 'DashboardController',
+      controllerAs: 'vm',
+      templateUrl: '/static/templates/iupdsmanager/graphs.html'
     }).when('/contact', {
       controller: 'ContactController',
       controllerAs: 'vm',

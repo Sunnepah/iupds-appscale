@@ -22,6 +22,9 @@
         vm.user = [];
         vm.register = register;
         vm.contact_graph = [];
+        vm.graphs = 1;
+        vm.createGraphs = createGraphs;
+        vm.dropGraphs = dropGraphs;
 
         // If the user is authenticated, they should not be here.
         if (Authentication.isAuthenticated()) {
@@ -39,7 +42,7 @@
           .then(function(result) {
             vm.data = result.data;
             vm.contact_graph = vm.data.contact_graph;
-            //console.log(vm.data.contact_graph);
+            console.log(vm.data);
         });
 
 
@@ -61,6 +64,14 @@
         */
         function register() {
           Dashboard.register('jade@gmail.com', '1234567', '1234567');
+        }
+
+        function createGraphs() {
+            Dashboard.createGraphs();
+        }
+
+        function dropGraphs() {
+            Dashboard.dropGraphs();
         }
     }
 
