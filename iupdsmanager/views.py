@@ -12,10 +12,10 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, SPARQLWrapper2
+from sparqlwrapper.SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, SPARQLWrapper2, SPARQLExceptions
 from rdflib import Graph
 import re
-from virtuoso.isqlwrapper import ISQLWrapper
+from virtuoso.virtuoso.isqlwrapper import ISQLWrapper
 
 # import pprint
 # APPSCALE RELATED IMPORT
@@ -24,23 +24,24 @@ from appscalehelper.appscale_user_client import AppscaleUserClient
 
 uaserver = AppscaleUserClient()
 
-sparql_endpoint = settings.SPARQL_ENDPOINT
-isql = ISQLWrapper(settings.VIRTUOSO_HOST, 'dba', 'dba')
+SPARQL_ENDPOINT = settings.SPARQL_ENDPOINT
+SPARQL_AUTH_ENDPOINT = settings.SPARQL_AUTH_ENDPOINT
+isql = ISQLWrapper(settings.VIRTUOSO_HOST, settings.VIRTUOSO_USER, settings.VIRTUOSO_PASSW)
 
 
 @api_view(['GET'])
 def profile(request):
     # result = isql.execute_cmd("SPARQL CLEAR GRAPH <%s>" % 'http://mygraph.com')
     # print result
+    # exit(1)
     if request.method == 'GET':
         if is_logged_in():
             user = get_user_data()
-            app_user = uaserver.get_user_data(user['email'])
-            print app_user
+            # app_user = uaserver.get_user_data('admin@gmail.com')#user['email'])
+            # print type(app_user)
             # create virtuoso user
-            graph_username = 'iupds_' + str(user['user_id'])
+            graph_username = user['nickname'] + '-' + str(user['user_id'])
             # create_graph_user(graph_username, '12345678')
-            print graph_username
             # user_profile = Profile(email=user['email'], username=user['email'], uid=user['user_id'],
             #                        user_id_old=user['user_id'], full_name='test user')
             # user_profile.save()
@@ -189,10 +190,14 @@ def contact_details(request):
 def my_contacts(request):
     try:
         if is_logged_in():
-            email = get_bindings(get_email_graph_uri())
-            telephone = get_bindings(get_telephone_graph_uri())
-            address = get_bindings(get_address_graph_uri())
+            email = query_graph(get_email_graph_uri())
+            print email
+            telephone = query_graph(get_telephone_graph_uri())
+            print telephone
+            address = query_graph(get_address_graph_uri())
+            print address
             person = query_graph(get_person_graph_uri())
+            print person
 
             return Response({'email': email, 'telephone': telephone, 'address': address, 'person': person},
                             status=status.HTTP_200_OK)
@@ -203,6 +208,54 @@ def my_contacts(request):
             }, status=status.HTTP_401_UNAUTHORIZED)
     except UserNotFoundError:
         return Response({'response': 'No content'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def create_graphs(request):
+    if request.method == 'POST':
+        try:
+            create_graph(get_person_graph_uri())
+            create_graph(get_email_graph_uri())
+            create_graph(get_telephone_graph_uri())
+            create_graph(get_address_graph_uri())
+
+            return Response({
+                'status': 'Graphs created!'
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            print e
+            return Response({
+                'status': 'Server error',
+                'message': 'Not successful'
+            }, status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response({
+            'status': 'Bad request',
+            'message': 'Graph creation was not successful'
+        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(['DELETE'])
+def drop_graphs(request):
+    if request.method == 'DELETE':
+        try:
+            drop_graph(get_person_graph_uri())
+            drop_graph(get_email_graph_uri())
+            drop_graph(get_telephone_graph_uri())
+            drop_graph(get_address_graph_uri())
+
+            return Response(status=status.HTTP_200_OK)
+        except Exception as e:
+            print e
+            return Response({
+                'status': 'Server error',
+                'message': 'Not successful'
+            }, status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response({
+            'status': 'Bad request',
+            'message': 'Not successful'
+        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 def is_logged_in():
@@ -279,8 +332,8 @@ def generate_contact_rdf(data):
         country = data['country']
         email = data['email']
 
-        uid = get_profile().uid
-        user_account_identifier = get_person_graph_uri() + str(uid)
+        # uid = get_profile().uid
+        user_account_identifier = get_person_graph_uri()    # + str(uid)
 
         rdf_persons += create_triple(user_account_identifier, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                      "http://www.w3.org/2006/vcard/ns#Individual")
@@ -288,17 +341,16 @@ def generate_contact_rdf(data):
                                      "no-type")
         rdf_persons += create_triple(user_account_identifier, "http://www.w3.org/2006/vcard/ns#nickname", nickname)
 
-        clear_graph(get_person_graph_uri)
-        # create_graph(person_graph_uri)
-        insert_graph(rdf_persons, get_person_graph_uri)
+        print clear_graph(get_person_graph_uri())
+        print insert_graph(rdf_persons, get_person_graph_uri())
 
         # Telephones
         telephone = str(data['telephone']).replace("+", "00")
         telephone_standard = data['telephone']
 
         rdf_telephones += create_triple(user_account_identifier, "http://www.w3.org/2006/vcard/ns#hasTelephone",
-                                        get_telephone_graph_uri() + telephone)
-        rdf_telephones += create_triple(get_telephone_graph_uri() + telephone,
+                                        get_telephone_graph_uri() + "/" + telephone)
+        rdf_telephones += create_triple(get_telephone_graph_uri() + "/" + telephone,
                                         "http://www.w3.org/2006/vcard/ns#hasValue", "tel:" + telephone_standard)
 
         if data["telephone_type"] == Contact.HOME:
@@ -313,7 +365,7 @@ def generate_contact_rdf(data):
             telephone_type = ""
 
         if telephone_type is not None:
-            rdf_telephones += create_triple(get_telephone_graph_uri() + telephone,
+            rdf_telephones += create_triple(get_telephone_graph_uri() + "/" + telephone,
                                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                             "http://www.w3.org/2006/vcard/ns#" + telephone_type)
 
@@ -324,18 +376,19 @@ def generate_contact_rdf(data):
         """ TODO Slugify Email """
         formatted_email = re.sub('[^0-9a-zA-Z]+', '-', str(email).lower())
         rdf_emails += create_triple(user_account_identifier, "http://www.w3.org/2006/vcard/ns#hasEmail",
-                                    get_email_graph_uri() + formatted_email)
-        rdf_emails += create_triple(get_email_graph_uri() + formatted_email, "http://www.w3.org/2006/vcard/ns#hasEmail",
+                                    get_email_graph_uri() + "/" + formatted_email)
+        rdf_emails += create_triple(get_email_graph_uri() + "/" + formatted_email, "http://www.w3.org/2006/vcard/ns#hasValue",
                                     "mailto:" + email)
-        rdf_emails += create_triple(get_email_graph_uri() + formatted_email,
+        rdf_emails += create_triple(get_email_graph_uri() + "/" + formatted_email,
                                     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                     "http://www.w3.org/2006/vcard/ns#Work")
 
         clear_graph(get_email_graph_uri())
         insert_graph(rdf_emails, get_email_graph_uri())
 
+        # Addresses
         formatted_mustamae = re.sub('[^0-9a-zA-Z]+', '-', str(street_address).lower())
-        user_address = get_address_graph_uri() + formatted_mustamae
+        user_address = get_address_graph_uri() + "/" + formatted_mustamae
         rdf_addresses += create_triple(user_account_identifier, "http://www.w3.org/2006/vcard/ns#hasAddress",
                                        user_address)
         rdf_addresses += create_triple(user_address, "http://www.w3.org/2006/vcard/ns#street-address", street_address,
@@ -377,18 +430,22 @@ def create_triple(subject, predicate, object_, type_=""):
 
 
 def create_graph(graph):
-    sparql = SPARQLWrapper(sparql_endpoint)
+    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
 
     sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
 
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
 
+    print results
+
     return results
 
 
 def insert_graph(rdf_triples, graph):
-    sparql = SPARQLWrapper(sparql_endpoint)
+    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
 
     query = """ INSERT IN GRAPH <""" + graph + """> { """ + rdf_triples + """ }"""
     print query
@@ -399,18 +456,22 @@ def insert_graph(rdf_triples, graph):
 
 
 def drop_graph(graph):
-    sparql = SPARQLWrapper(sparql_endpoint)
+    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
 
     sparql.setQuery(""" DROP GRAPH <""" + graph + """>""")
 
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
 
+    print results
+
     return results
 
 
 def clear_graph(graph):
-    sparql = SPARQLWrapper(sparql_endpoint)
+    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
 
     sparql.setQuery(""" CLEAR GRAPH <""" + graph + """>""")
 
@@ -421,7 +482,9 @@ def clear_graph(graph):
 
 
 def query_graph(graph):
-    sparql = SPARQLWrapper(sparql_endpoint)
+    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+
     query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
 
     sparql.setQuery(query)
@@ -441,7 +504,8 @@ def query_graph(graph):
 
 def get_bindings(graph):
     try:
-        sparql = SPARQLWrapper2(sparql_endpoint)
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
         query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
 
         sparql.setQuery(query)
@@ -492,10 +556,11 @@ def test_rdf():
 
 
 def create_graph_user(username, password):
-    # 1 Create a new users:
+    # 1 Create a new users: testexamplecom185804764220139124118
     create_user_query = ("DB.DBA.USER_CREATE(%s, " + password + ")") % username
 
-    sparql = SPARQLWrapper(sparql_endpoint)
+    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
 
     sparql.setQuery(create_user_query)
 
@@ -506,46 +571,61 @@ def create_graph_user(username, password):
 
 
 def set_graph_level_security(username, graph):
+    # DB.DBA.USER_CREATE('username', '1234567');
+    # GRANT SPARQL_UPDATE TO "username";
+    # DB.DBA.RDF_DEFAULT_USER_PERMS_SET('username', 0);
+
     # 2 Grant update
-    grant_user_update = "GRANT SPARQL_SELECT TO %s;" % username
-    grant_user_update = "GRANT SPARQL_UPDATE TO %s;" % username
-    grant_user_update = "GRANT SPARQL_SPONGE TO %s;" % username
+    grant_user_update = 'GRANT SPARQL_SELECT TO username;'
+    grant_user_update = 'GRANT SPARQL_UPDATE TO username;'
+    grant_user_update = 'GRANT SPARQL_SPONGE TO username;'
 
     # grant SPARQL_SELECT to "Anna";
     # grant SPARQL_UPDATE to "Anna";
     # grant SPARQL_SPONGE to "Anna";
+    # SPARQL SELECT * FROM <settings.GRAPH_ROOT/username> WHERE { ?s ?p ?o }
 
     # 3 Set basic privileges for each user
     # In this example, none of the individual users will have global access to graphs:
-    basic_user_privilege = "DB.DBA.RDF_DEFAULT_USER_PERMS_SET (%s, 0)" % username
+    basic_user_privilege = "DB.DBA.RDF_DEFAULT_USER_PERMS_SET (test@example.com-185804764220139124118, 0)"
 
     # 4 Grant Specific Privileges on Specific Graphs to Specific Users
     # User can read from (but not write to) her personal system data graph
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + graph + ", %s, 1)" % username
+    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + graph + ", test@example.com-185804764220139124118, 1)"
 
     # 5 Update access(i.e., Write via SPARUL).
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + graph + ", %s, 2)" % username
+    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + settings.GRAPH_ROOT + "/username/persons, username, 2)"
     # DB.DBA.RDF_GRAPH_USER_PERMS_SET ('http://example.com/Anna/private', 'Anna', 3);
+    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET ('settings.GRAPH_ROOT/username/emails', 'username', 3)
+    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/persons', 'username', 3)
+    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/telephones', 'username', 3)
+    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/addresses', 'username', 3)
+    # DB.DBA.RDF_GRAPH_USER_PERMS_SET('http://inforegister.ee/185804764220139124118/persons/', '185804764220139124118', 3)
+
 
     # 6 Sponge access (i.e., Write via "RDF Network Resource Fetch" methods).
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + graph + ", %s, 4)" % username
+    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET ('" + graph + "', 'username', 4)"
 
 
 def get_email_graph_uri():
     user = get_user_data()
-    return 'http://inforegister.ee/' + str(user['user_id']) + '/emails/'
+    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/emails'
+    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/emails'
 
 
 def get_telephone_graph_uri():
     user = get_user_data()
-    return 'http://inforegister.ee/' + str(user['user_id']) + '/telephones/'
+    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/telephones'
+    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/telephones'
 
 
 def get_address_graph_uri():
     user = get_user_data()
-    return 'http://inforegister.ee/' + str(user['user_id']) + '/addresses/'
+    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/addresses'
+    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/addresses'
 
 
 def get_person_graph_uri():
     user = get_user_data()
-    return 'http://inforegister.ee/' + str(user['user_id']) + '/persons/'
+    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/persons'
+    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/persons'
