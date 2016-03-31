@@ -1,6 +1,7 @@
 # coding=utf-8
 from google.appengine.api import users
 from google.appengine.api.users import UserNotFoundError
+from slugify import slugify
 
 # from django.core import serializers
 # from django.http import HttpResponse
@@ -12,10 +13,14 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from sparqlwrapper.SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, SPARQLWrapper2, SPARQLExceptions
+from sparqlwrapper.SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, TURTLE, SPARQLWrapper2, SPARQLExceptions
 from rdflib import Graph
 import re
 from virtuoso.virtuoso.isqlwrapper import ISQLWrapper
+
+import urllib
+import urllib2
+import json
 
 # import pprint
 # APPSCALE RELATED IMPORT
@@ -31,17 +36,12 @@ isql = ISQLWrapper(settings.VIRTUOSO_HOST, settings.VIRTUOSO_USER, settings.VIRT
 
 @api_view(['GET'])
 def profile(request):
-    # result = isql.execute_cmd("SPARQL CLEAR GRAPH <%s>" % 'http://mygraph.com')
-    # print result
-    # exit(1)
     if request.method == 'GET':
         if is_logged_in():
             user = get_user_data()
-            # app_user = uaserver.get_user_data('admin@gmail.com')#user['email'])
+            # app_user = uaserver.get_user_data('admin@gmail.com')
             # print type(app_user)
-            # create virtuoso user
-            graph_username = user['nickname'] + '-' + str(user['user_id'])
-            # create_graph_user(graph_username, '12345678')
+
             # user_profile = Profile(email=user['email'], username=user['email'], uid=user['user_id'],
             #                        user_id_old=user['user_id'], full_name='test user')
             # user_profile.save()
@@ -170,9 +170,9 @@ def create_contact(request):
 def contact_details(request):
     try:
         if is_logged_in():
-            email = get_bindings(get_email_graph_uri())
-            telephone = get_bindings(get_telephone_graph_uri())
-            address = get_bindings(get_address_graph_uri())
+            email = query_graph(get_email_graph_uri())
+            telephone = query_graph(get_telephone_graph_uri())
+            address = query_graph(get_address_graph_uri())
             person = query_graph(get_person_graph_uri())
 
             return Response({'email': email, 'telephone': telephone, 'address': address, 'person': person},
@@ -430,8 +430,13 @@ def create_triple(subject, predicate, object_, type_=""):
 
 
 def create_graph(graph):
+    username = get_user_id()
+    create_graph_user(username)
+
+    set_user_permission_on_personal_graph(graph, username, 3)
+
     sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    sparql.setCredentials(username, settings.GRAPH_USER_PW)
 
     sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
 
@@ -443,9 +448,17 @@ def create_graph(graph):
     return results
 
 
+def get_user_id():
+    user = get_user_data()
+    # create virtuoso user
+    # nickname_ = slugify(unicode(user['nickname']))
+    user_id = str(user['user_id'])
+    return user_id
+
+
 def insert_graph(rdf_triples, graph):
     sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
     query = """ INSERT IN GRAPH <""" + graph + """> { """ + rdf_triples + """ }"""
     print query
@@ -457,7 +470,7 @@ def insert_graph(rdf_triples, graph):
 
 def drop_graph(graph):
     sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
     sparql.setQuery(""" DROP GRAPH <""" + graph + """>""")
 
@@ -471,7 +484,7 @@ def drop_graph(graph):
 
 def clear_graph(graph):
     sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
     sparql.setQuery(""" CLEAR GRAPH <""" + graph + """>""")
 
@@ -483,7 +496,7 @@ def clear_graph(graph):
 
 def query_graph(graph):
     sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
     query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
 
@@ -505,7 +518,7 @@ def query_graph(graph):
 def get_bindings(graph):
     try:
         sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-        sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
         query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
 
         sparql.setQuery(query)
@@ -555,19 +568,15 @@ def test_rdf():
 #             return Response({"success": False})
 
 
-def create_graph_user(username, password):
-    # 1 Create a new users: testexamplecom185804764220139124118
-    create_user_query = ("DB.DBA.USER_CREATE(%s, " + password + ")") % username
+def create_graph_user(username, password='secret'):
+    remote_command("DB.DBA.USER_CREATE('" + username + "', '" + password + "')")
+    remote_command('GRANT SPARQL_UPDATE TO "' + username + '"')
+    remote_command('GRANT SPARQL_SPONGE TO "' + username + '"')
+    remote_command("DB.DBA.RDF_DEFAULT_USER_PERMS_SET('" + username + "', 0)")
 
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
 
-    sparql.setQuery(create_user_query)
-
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-
-    return results
+def set_user_permission_on_personal_graph(graph, username, permission):
+    remote_command("DB.DBA.RDF_DEFAULT_USER_PERMS_SET('" + graph + "','" + username + "'," + str(permission) + ")")
 
 
 def set_graph_level_security(username, graph):
@@ -576,9 +585,9 @@ def set_graph_level_security(username, graph):
     # DB.DBA.RDF_DEFAULT_USER_PERMS_SET('username', 0);
 
     # 2 Grant update
-    grant_user_update = 'GRANT SPARQL_SELECT TO username;'
-    grant_user_update = 'GRANT SPARQL_UPDATE TO username;'
-    grant_user_update = 'GRANT SPARQL_SPONGE TO username;'
+    grant_user_update = 'GRANT SPARQL_SELECT TO "username";'
+    grant_user_update = 'GRANT SPARQL_UPDATE TO "username";'
+    grant_user_update = 'GRANT SPARQL_SPONGE TO "username";'
 
     # grant SPARQL_SELECT to "Anna";
     # grant SPARQL_UPDATE to "Anna";
@@ -629,3 +638,19 @@ def get_person_graph_uri():
     user = get_user_data()
     print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/persons'
     return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/persons'
+
+
+def remote_command(command):
+
+    values = {'cmd': command}
+
+    data = urllib.urlencode(values)
+    req = urllib2.Request(settings.REMOTE_COMMAND_HOST, data)
+    response = urllib2.urlopen(req)
+    print response.read()
+    if response.getcode() == 200:
+        return True
+    else:
+        return False
+
+
