@@ -55,13 +55,14 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'polls',
     'django_extensions',
-    'iupdsmanager',
     'rest_framework',
+    'iupdsmanager',
     # 'compressor',
     'tastypie',
     'jobs',
     'authentication',
     'posts',
+    'oauth2_provider',
 
 )
 
@@ -208,7 +209,7 @@ VIRTUOSO_PORT = "8890"
 VIRTUOSO_USER = "dba"
 VIRTUOSO_PASSW = "dba"
 
-GRAPH_USER = '185804764220139124118'
-GRAPH_USER_PW = '1234567'
 
 GRAPH_ROOT = 'http://inforegister.ee'
+
+REMOTE_COMMAND_HOST = 'http://127.0.0.1:8000/api/v1/commands/'
