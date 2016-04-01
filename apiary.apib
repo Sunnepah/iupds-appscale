@@ -374,3 +374,147 @@ API description for request and response examples for pds
 
         [
         ]
+
+## Social Facebook [/185804764220139124118/facebook]
+
+### Get Facebook [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/facebook",
+                    "items": [
+                        {
+                            "_about": "https://www.facebook.com/sunday.ayanbode.ayandokun",
+                            "userId": "9294258282032032340423093",
+                            "accountServiceHomepage": "http://facebook.com",
+                            "accountName": "Sunday Ayandokun",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount"
+                            ],
+                            "knows":"https://facebook.com/user-id/friendlists",
+                            "hasPosts":[
+                                "https://facebook.com/post/id",
+                                "https://facebook.com/post/id",
+                                "https://facebook.com/post/id",
+                            ],
+                            "belongsTo": "https://facebook.com/user_id/groups",
+                            "hasComments": "https://graph.facebook.com/user_id/comments",
+                            "likes": "https://facebook.com/user_id/likes",
+                            "statusesLikes": ""
+                            "avatar": "graph.com/3et54rty7686576856865854",
+                            "updatedTime": "2006-09-07T09:33:30Z"
+                        },
+
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+
++ Response 404 (application/json)
+
+        [
+        ]
+        
+## Social Twitter [/185804764220139124118/twitter]
+
+### Get Twitter [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/twitter",
+                    "items": [
+                        {
+                            "_about": "https://www.twitter.com/sundayayanbode",
+                            "userId": "9294258282032032340423093",
+                            "accountServiceHomepage": "http://twitter.com",
+                            "accountName": "Sunday Ayandokun",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount"
+                            ],
+                            "hasTweets":"https://api.twitter.com/1.1/twitter_id/statuses/user_timeline",
+                            "follows": "https://api.twitter.com/1.1/twitter_id/friends",
+                            "hasFollowers": "https://api.twitter.com/1.1/twitter_id/followers",
+                            "favorites": "https://api.twitter.com/1.1/twitter_id/favorites/list",
+                            "avatar": "twitter.com/3et54rty7686576856865854",
+                            "updatedTime": "2006-09-07T09:33:30Z",
+                        },
+
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+
++ Response 404 (application/json)
+
+        [
+        ]
+        
+## Social Linkedln [/185804764220139124118/linkedln]
+
+### Get Linkedln [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "format": "linked-data-api",
+                "version": "1.0",
+                "result": {
+                    "_about": "http://inforegister.ee/185804764220139124118/linkedln",
+                    "items": [
+                        {
+                            "_about": "https://www.linkedln.com/sundayayanbode",
+                            "userId": "9294258282032032340423093",
+                            "accountServiceHomepage": "http://linkedln.com",
+                            "accountName": "Sunday Ayandokun",
+                            "type": [
+                                "http://xmlns.com/foaf/0.1/OnlineAccount"
+                            ],
+                            "hasConnections": "",
+                            "avatar": "linkedln.com/3et54rty7686576856865854",
+                            "updatedTime": "2006-09-07T09:33:30Z",
+                        },
+
+                    ],
+                    "itemsPerPage": 50,
+                    "page": 0,
+                    "startIndex": 1,
+                    "totalResults": 1,
+                    "type": [
+                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
+                        "http://purl.org/linked-data/api/vocab#Page"
+                    ]
+                }
+            }
+        ]
+
++ Response 404 (application/json)
+
+        [
+        ]
