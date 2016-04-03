@@ -19,7 +19,7 @@ from jobs.api import JobResource
 
 # from polls.views import index as pollIndex
 from iupdsmanager.views import index, profile, create_user, logout,\
-    create_contact, contact_details, my_contacts, create_graphs, drop_graphs
+    create_contact, contact_details, my_contacts, create_graphs, drop_graphs, create_graph_user
 # from iupds.views import IndexView
 
 from rest_framework_nested import routers
@@ -59,6 +59,7 @@ urlpatterns = [
     url(r'^api/v1/contact/details$', contact_details, name='contact_details'),
     url(r'^api/v1/mycontacts/$', my_contacts, name='mycontacts'),
     url(r'^api/v1/create_user/$', create_user, name='create_user'),
+    url(r'^api/v1/graph/user/$', create_graph_user, name='create_graph_user'),
     url(r'^api/v1/drop_graphs/$', drop_graphs, name='drop_graphs'),
     url(r'^api/v1/create_graphs/$', create_graphs, name='create_graphs'),
     url(r'^api/v1/auth/logout/$', logout, name='logout')
