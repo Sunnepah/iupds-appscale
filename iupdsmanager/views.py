@@ -25,9 +25,9 @@ import json
 # import pprint
 # APPSCALE RELATED IMPORT
 # import cgi
-from appscalehelper.appscale_user_client import AppscaleUserClient
+# from appscalehelper.appscale_user_client import AppscaleUserClient
 
-uaserver = AppscaleUserClient()
+# uaserver = AppscaleUserClient()
 
 SPARQL_ENDPOINT = settings.SPARQL_ENDPOINT
 SPARQL_AUTH_ENDPOINT = settings.SPARQL_AUTH_ENDPOINT
@@ -258,6 +258,24 @@ def drop_graphs(request):
         }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+@api_view(['POST'])
+def create_graph_user(request):
+    try:
+        username = get_user_id()
+        create_sql_graph_user(username)
+
+        return Response({
+            'status': 'User created!'
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        print e
+        return Response({
+            'status': 'Server error',
+            'message': 'Not successful'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
 def is_logged_in():
     try:
         user = users.get_current_user()
@@ -430,22 +448,24 @@ def create_triple(subject, predicate, object_, type_=""):
 
 
 def create_graph(graph):
-    username = get_user_id()
-    create_graph_user(username)
+    try:
+        username = get_user_id()
+        # set_user_permission_on_personal_graph(graph, username)
 
-    set_user_permission_on_personal_graph(graph, username, 3)
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(username, settings.GRAPH_USER_PW)
+        # sparql.setCredentials(settings.VIRTUOSO_USER, settings.VIRTUOSO_PASSW)
 
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(username, settings.GRAPH_USER_PW)
+        sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
 
-    sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
+        print results
 
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-
-    print results
-
-    return results
+        return results
+    except Exception as e:
+        print e.message
+        return list()
 
 
 def get_user_id():
@@ -457,58 +477,74 @@ def get_user_id():
 
 
 def insert_graph(rdf_triples, graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
+    try:
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    query = """ INSERT IN GRAPH <""" + graph + """> { """ + rdf_triples + """ }"""
-    print query
-    sparql.setQuery(query)
+        query = """ INSERT IN GRAPH <""" + graph + """> { """ + rdf_triples + """ }"""
+        print query
+        sparql.setQuery(query)
 
-    sparql.setReturnFormat(JSON)
-    return sparql.query().convert()
+        sparql.setReturnFormat(JSON)
+        return sparql.query().convert()
+    except Exception as e:
+        print e.message
+        return list()
 
 
 def drop_graph(graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
+    try:
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    sparql.setQuery(""" DROP GRAPH <""" + graph + """>""")
+        sparql.setQuery(""" DROP GRAPH <""" + graph + """>""")
 
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
 
-    print results
+        print results
 
-    return results
+        return results
+    except Exception as e:
+        print e.message
+        return list()
 
 
 def clear_graph(graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
+    try:
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    sparql.setQuery(""" CLEAR GRAPH <""" + graph + """>""")
+        sparql.setQuery(""" CLEAR GRAPH <""" + graph + """>""")
 
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
 
-    return results
+        return results
+    except Exception as e:
+        print e.message
+        return list()
 
 
 def query_graph(graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
+    try:
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
+        query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
 
-    sparql.setQuery(query)
+        sparql.setQuery(query)
 
-    # JSON example
-    # print '\n\n*** JSON Example'
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
+        # JSON example
+        # print '\n\n*** JSON Example'
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
 
-    # res = json.dumps(results, separators=(',', ':'))
-    return results['results']['bindings']
+        # res = json.dumps(results, separators=(',', ':'))
+        return results['results']['bindings']
+    except Exception as e:
+        print e.message
+        return list()
 
 
 # for result in results["results"]["bindings"]:
@@ -554,66 +590,26 @@ def test_rdf():
     return len(g)
 
 
-# Sample Non-model Endpoint
-# class ShareView(views.APIView):
-#     permission_classes = []
-#
-#     def post(self, request, *args, **kwargs):
-#         email = request.DATA.get('email', None)
-#         url = request.DATA.get('url', None)
-#         if email and url:
-#             share_url(email, url)
-#             return Response({"success": True})
-#         else:
-#             return Response({"success": False})
-
-
-def create_graph_user(username, password='secret'):
+def create_sql_graph_user(username, password='secret'):
     remote_command("DB.DBA.USER_CREATE('" + username + "', '" + password + "')")
+    remote_command('GRANT SPARQL_SELECT TO "' + username + '"')
     remote_command('GRANT SPARQL_UPDATE TO "' + username + '"')
     remote_command('GRANT SPARQL_SPONGE TO "' + username + '"')
+
+    username = get_user_id()
+    # Set graph permissions on just created user
+    set_user_permission_on_personal_graph(get_person_graph_uri(), username)
+    set_user_permission_on_personal_graph(get_email_graph_uri(), username)
+    set_user_permission_on_personal_graph(get_telephone_graph_uri(), username)
+    set_user_permission_on_personal_graph(get_address_graph_uri(), username)
+
+
+def set_user_permission_on_personal_graph(graph, username):
     remote_command("DB.DBA.RDF_DEFAULT_USER_PERMS_SET('" + username + "', 0)")
-
-
-def set_user_permission_on_personal_graph(graph, username, permission):
-    remote_command("DB.DBA.RDF_DEFAULT_USER_PERMS_SET('" + graph + "','" + username + "'," + str(permission) + ")")
-
-
-def set_graph_level_security(username, graph):
-    # DB.DBA.USER_CREATE('username', '1234567');
-    # GRANT SPARQL_UPDATE TO "username";
-    # DB.DBA.RDF_DEFAULT_USER_PERMS_SET('username', 0);
-
-    # 2 Grant update
-    grant_user_update = 'GRANT SPARQL_SELECT TO "username";'
-    grant_user_update = 'GRANT SPARQL_UPDATE TO "username";'
-    grant_user_update = 'GRANT SPARQL_SPONGE TO "username";'
-
-    # grant SPARQL_SELECT to "Anna";
-    # grant SPARQL_UPDATE to "Anna";
-    # grant SPARQL_SPONGE to "Anna";
-    # SPARQL SELECT * FROM <settings.GRAPH_ROOT/username> WHERE { ?s ?p ?o }
-
-    # 3 Set basic privileges for each user
-    # In this example, none of the individual users will have global access to graphs:
-    basic_user_privilege = "DB.DBA.RDF_DEFAULT_USER_PERMS_SET (test@example.com-185804764220139124118, 0)"
-
-    # 4 Grant Specific Privileges on Specific Graphs to Specific Users
-    # User can read from (but not write to) her personal system data graph
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + graph + ", test@example.com-185804764220139124118, 1)"
-
-    # 5 Update access(i.e., Write via SPARUL).
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + settings.GRAPH_ROOT + "/username/persons, username, 2)"
-    # DB.DBA.RDF_GRAPH_USER_PERMS_SET ('http://example.com/Anna/private', 'Anna', 3);
-    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET ('settings.GRAPH_ROOT/username/emails', 'username', 3)
-    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/persons', 'username', 3)
-    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/telephones', 'username', 3)
-    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/addresses', 'username', 3)
-    # DB.DBA.RDF_GRAPH_USER_PERMS_SET('http://inforegister.ee/185804764220139124118/persons/', '185804764220139124118', 3)
-
-
-    # 6 Sponge access (i.e., Write via "RDF Network Resource Fetch" methods).
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET ('" + graph + "', 'username', 4)"
+    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(1) + ")")
+    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(2) + ")")
+    remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(3) + ")")
+    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(4) + ")")
 
 
 def get_email_graph_uri():
