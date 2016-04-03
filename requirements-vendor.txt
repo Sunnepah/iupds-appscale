@@ -17,3 +17,4 @@ paramiko
 pycrypto
 oauth2_provider
 slugify
+oauth2

@@ -30,3 +30,4 @@ wheel==0.24.0
 wstools==0.4.3
 rdflib>=4.2.1
 paramiko
+oauth2
