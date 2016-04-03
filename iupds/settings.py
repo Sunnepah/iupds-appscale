@@ -201,10 +201,10 @@ AUTH_USER_MODEL = 'authentication.Account'
 
 
 # VIRTUOSO SETTINGS
-SPARQL_ENDPOINT = "http://33.33.33.13:8890/sparql"
-SPARQL_AUTH_ENDPOINT = "http://33.33.33.13:8890/sparql-auth"
+SPARQL_ENDPOINT = "http://192.168.33.18:8890/sparql"
+SPARQL_AUTH_ENDPOINT = "http://192.168.33.18:8890/sparql-auth"
 
-VIRTUOSO_HOST = "33.33.33.13"
+VIRTUOSO_HOST = "192.168.33.18"
 VIRTUOSO_PORT = "8890"
 VIRTUOSO_USER = "dba"
 VIRTUOSO_PASSW = "dba"
@@ -213,3 +213,5 @@ VIRTUOSO_PASSW = "dba"
 GRAPH_ROOT = 'http://inforegister.ee'
 
 REMOTE_COMMAND_HOST = 'http://127.0.0.1:8000/api/v1/commands/'
+
+GRAPH_USER_PW = 'secret'
