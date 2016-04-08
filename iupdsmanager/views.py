@@ -7,6 +7,7 @@ from slugify import slugify
 # from django.http import HttpResponse
 from .models import Profile, Contact, Address
 from django.shortcuts import render
+from django.shortcuts import redirect
 from iupds import settings
 
 from rest_framework import status
@@ -16,7 +17,6 @@ from rest_framework.response import Response
 from sparqlwrapper.SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, TURTLE, SPARQLWrapper2, SPARQLExceptions
 from rdflib import Graph
 import re
-from virtuoso.virtuoso.isqlwrapper import ISQLWrapper
 
 import urllib
 import urllib2
@@ -31,7 +31,6 @@ import json
 
 SPARQL_ENDPOINT = settings.SPARQL_ENDPOINT
 SPARQL_AUTH_ENDPOINT = settings.SPARQL_AUTH_ENDPOINT
-isql = ISQLWrapper(settings.VIRTUOSO_HOST, settings.VIRTUOSO_USER, settings.VIRTUOSO_PASSW)
 
 
 @api_view(['GET'])
@@ -39,27 +38,16 @@ def profile(request):
     if request.method == 'GET':
         if is_logged_in():
             user = get_user_data()
-            # app_user = uaserver.get_user_data('admin@gmail.com')
-            # print type(app_user)
 
-            # user_profile = Profile(email=user['email'], username=user['email'], uid=user['user_id'],
-            #                        user_id_old=user['user_id'], full_name='test user')
-            # user_profile.save()
-
-            total_telephone_graph = len(query_graph(get_telephone_graph_uri()))
-            total_email_graph = len(query_graph(get_email_graph_uri()))
-            total_addresses_graph = len(query_graph(get_address_graph_uri()))
-            total_persons_graph = len(query_graph(get_person_graph_uri()))
-
-            total_contact_graph = total_telephone_graph + total_email_graph + total_addresses_graph + total_persons_graph
+            total_contact_graph = get_total_user_graph()
 
             return Response({"user": user, "contact_graph": total_contact_graph}, status=status.HTTP_200_OK)
         else:
             users.create_login_url('/')
     else:
         return Response({
-            'status': 'Bad request',
-            'message': 'Account could not be created with received data.'
+            'status': False,
+            'message': 'Method not allowed'
         }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
@@ -449,12 +437,8 @@ def create_triple(subject, predicate, object_, type_=""):
 
 def create_graph(graph):
     try:
-        username = get_user_id()
-        # set_user_permission_on_personal_graph(graph, username)
-
         sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-        sparql.setCredentials(username, settings.GRAPH_USER_PW)
-        # sparql.setCredentials(settings.VIRTUOSO_USER, settings.VIRTUOSO_PASSW)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
         sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
 
@@ -494,6 +478,8 @@ def insert_graph(rdf_triples, graph):
 
 def drop_graph(graph):
     try:
+        clear_graph(graph)
+
         sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
         sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
@@ -545,10 +531,6 @@ def query_graph(graph):
     except Exception as e:
         print e.message
         return list()
-
-
-# for result in results["results"]["bindings"]:
-# print result
 
 
 def get_bindings(graph):
@@ -650,3 +632,31 @@ def remote_command(command):
         return False
 
 
+def get_total_user_graph():
+    total_telephone_graph = len(query_graph(get_telephone_graph_uri()))
+    total_email_graph = len(query_graph(get_email_graph_uri()))
+    total_addresses_graph = len(query_graph(get_address_graph_uri()))
+    total_persons_graph = len(query_graph(get_person_graph_uri()))
+    total_contact_graph = total_telephone_graph + total_email_graph + total_addresses_graph + total_persons_graph
+
+    return total_contact_graph
+
+
+@api_view(['GET'])
+def oauth_authorize(request):
+    if request.method == 'GET':
+        client_id = request.query_params.get('client_id', None)
+        callback_url = request.query_params.get('callback_url', None)
+
+        redirect_url = "http://127.0.0.1:8000/o/token/?state=random_state_string&client_id=" + client_id + \
+                       "&response_type=code&callback_url=" + callback_url
+
+        if is_logged_in():
+            return redirect(redirect_url)
+        else:
+            return redirect(users.create_login_url(redirect_url))
+    else:
+        return Response({
+            'status': False,
+            'message': 'Method not allowed'
+        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)

@@ -13,7 +13,6 @@ import SOAPpy
 from key_name import KEY_NAME
 from uaserver_host import UA_SERVER_IP
 from local_state import LocalState
-from iupds import settings
 
 
 class AppscaleUserClient:
@@ -84,7 +83,7 @@ class AppscaleUserClient:
         """
         self.host = self.UA_SERVER_IP
         self.server = SOAPpy.SOAPProxy('https://%s:%s' % (self.host, self.PORT))
-        self.secret = settings.APPSC_KEY  # LocalState.get_secret_key(KEY_NAME)
+        self.secret = LocalState.get_secret_key(KEY_NAME)
 
         # Disable certificate verification for Python 2.7.9.
         if hasattr(ssl, '_create_unverified_context'):
@@ -208,8 +207,7 @@ class AppscaleUserClient:
             raise Exception(result)
 
     def is_user_enabled(self, user, secret):
-        # is_user_enabled(user, secret)
-        return True
+        return self.server.is_user_enabled(user, secret)
 
     def enable_user(self, user, secret):
         # enable_user(user, secret)
@@ -259,6 +257,3 @@ class AppscaleUserClient:
             error_msgs['password_confirmation'] = 'Passwords do not match.'
 
         return error_msgs
-
-# https://192.168.33.10:1443/users/create
-# user_email=admin%40gmail.com&user_password=1234567&user_password_confirmation=1234567
