@@ -46,30 +46,25 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = (
-    # 'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'polls',
     'django_extensions',
+    # 'oauth2_provider',
+    # 'corsheaders',
     'rest_framework',
     'iupdsmanager',
-    # 'compressor',
-    'tastypie',
-    'jobs',
     'authentication',
-    'posts',
-    'oauth2_provider',
-
 )
 
 MIDDLEWARE_CLASSES = (
     'google.appengine.ext.ndb.django_middleware.NdbDjangoMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
@@ -197,8 +192,6 @@ else:
 
 APPSC_KEY = 'app_secret'
 
-AUTH_USER_MODEL = 'authentication.Account'
-
 
 # VIRTUOSO SETTINGS
 SPARQL_ENDPOINT = "http://192.168.33.18:8890/sparql"
@@ -212,6 +205,42 @@ VIRTUOSO_PASSW = "dba"
 
 GRAPH_ROOT = 'http://inforegister.ee'
 
-REMOTE_COMMAND_HOST = 'http://127.0.0.1:8000/api/v1/commands/'
+REMOTE_COMMAND_HOST = 'http://0.0.0.0:8653/api/v1/commands/'
 
 GRAPH_USER_PW = 'secret'
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = ()
+CORS_ORIGIN_REGEX_WHITELIST = ()
+CORS_URLS_REGEX = '^.*$'  # r'^/api/.*$'
+
+CORS_ALLOW_METHODS = (
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS'
+)
+
+CORS_ALLOW_HEADERS = (
+    'x-requested-with',
+    'content-type',
+    'accept',
+    'origin',
+    'authorization',
+    'x-csrftoken'
+)
+
+CORS_EXPOSE_HEADERS = ()
+
+CORS_PREFLIGHT_MAX_AGE = 86400
+
+CORS_ALLOW_CREDENTIALS = False
+
+CORS_REPLACE_HTTPS_REFERER = False
+
+# AUTHENTICATION_BACKENDS = (
+#    'rest_framework_social_oauth2.backends.DjangoOAuth2',
+#    'django.contrib.auth.backends.ModelBackend',
+# )

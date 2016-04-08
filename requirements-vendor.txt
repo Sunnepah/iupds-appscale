@@ -15,6 +15,4 @@ rdflib>=4.2.1
 simplejson==3.8.2
 paramiko
 pycrypto
-oauth2_provider
 slugify
-oauth2
