@@ -1,13 +1,17 @@
 # coding=utf-8
 from google.appengine.api import users
 from google.appengine.api.users import UserNotFoundError
-from slugify import slugify
+import urllib
+import urllib2
+from google.appengine.api import urlfetch
 
-# from django.core import serializers
-# from django.http import HttpResponse
-from .models import Profile, Contact, Address
-from django.shortcuts import render
-from django.shortcuts import redirect
+# from django.http import HttpResponseRedirect, HttpRequest, HttpResponse
+# import json
+
+from .models import Profile, Contact, Address, Application, Grant, AccessToken
+from django.shortcuts import render, redirect
+from django.core.urlresolvers import reverse_lazy
+from django.utils import timezone
 from iupds import settings
 
 from rest_framework import status
@@ -15,14 +19,19 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from sparqlwrapper.SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, TURTLE, SPARQLWrapper2, SPARQLExceptions
-from rdflib import Graph
+# from rdflib import Graph
 import re
 
-import urllib
-import urllib2
-import json
+from rest_framework.exceptions import APIException
+import logging
 
-# import pprint
+from django.forms.models import modelform_factory
+from django.views.generic import CreateView, ListView, DetailView, DeleteView, UpdateView
+
+# ouath2
+from oauthlib.oauth2 import BearerToken
+from iupdsmanager.authorization_code import AuthorizationCodeGrantPds
+
 # APPSCALE RELATED IMPORT
 # import cgi
 # from appscalehelper.appscale_user_client import AppscaleUserClient
@@ -31,6 +40,14 @@ import json
 
 SPARQL_ENDPOINT = settings.SPARQL_ENDPOINT
 SPARQL_AUTH_ENDPOINT = settings.SPARQL_AUTH_ENDPOINT
+
+log = logging.getLogger('oauth2_provider')
+logging.basicConfig(level=logging.DEBUG)
+
+
+class ServiceUnavailable(APIException):
+    status_code = 503
+    default_detail = 'Service temporarily unavailable, try again later.'
 
 
 @api_view(['GET'])
@@ -111,9 +128,12 @@ def index(request):
 
 
 def get_profile():
-    user = get_user_data()
-    user_profile = Profile.objects.get(email=user['email'])
-    return user_profile
+    try:
+        user = get_user_data()
+        user_profile = Profile.objects.get(email=user['email'])
+        return user_profile
+    except:
+        return False
 
 
 @api_view(['POST'])
@@ -566,12 +586,6 @@ def get_bindings(graph):
         return False
 
 
-def test_rdf():
-    g = Graph()
-    g.parse("/Users/sunnepah/appscale/apps/ipds-gae-django-skeleton/contactrdf.nt", format="nt")
-    return len(g)
-
-
 def create_sql_graph_user(username, password='secret'):
     remote_command("DB.DBA.USER_CREATE('" + username + "', '" + password + "')")
     remote_command('GRANT SPARQL_SELECT TO "' + username + '"')
@@ -642,21 +656,238 @@ def get_total_user_graph():
     return total_contact_graph
 
 
-@api_view(['GET'])
 def oauth_authorize(request):
-    if request.method == 'GET':
-        client_id = request.query_params.get('client_id', None)
-        callback_url = request.query_params.get('callback_url', None)
+    try:
+        if request.method == 'GET':
+            client_id = str(request.GET['client_id'])
+            # callback_url = str(request.GET['callback_url'])
+            print client_id + " - "
 
-        redirect_url = "http://127.0.0.1:8000/o/token/?state=random_state_string&client_id=" + client_id + \
-                       "&response_type=code&callback_url=" + callback_url
+            redirect_url = "http://localhost:9805/oauth/authorize/?state=random_state_string&client_id=" + client_id + \
+                           "&response_type=code"
 
-        if is_logged_in():
-            return redirect(redirect_url)
+            if is_logged_in():
+                # check
+                app = Application.objects.get(client_id=client_id)
+                application = {'name': getattr(app, 'name'), 'scopes_descriptions': settings.SCOPES,
+                               'scope': " ".join(settings.SCOPES),
+                               'redirect_uri': getattr(app, 'redirect_uris'),
+                               'client_id': getattr(app, 'client_id')}
+
+                return render(request, "oauth2_provider/authorize.html", application)
+            else:
+                return redirect(users.create_login_url(redirect_url))
+        elif request.method == 'POST':
+            client_id = str(request.GET['client_id'])
+            if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
+                token = BearerToken()
+                grant = AuthorizationCodeGrantPds()
+
+                userprofile = Profile.objects.get(appscale_user_id=get_user_id())
+                request_ = {
+                    'client_id': request.POST.get('client_id'),
+                    'redirect_uri': request.POST.get('redirect_uri'),
+                    'response_type': request.POST.get('response_type', None),
+                    'state': request.POST.get('state', None),
+                    'client': Application.objects.get(client_id=client_id),
+                    'user': userprofile,
+                    'scopes': request.POST.get('scope')
+                }
+
+                uri = grant.create_authorization_response(get_object(request_), token)
+                return redirect(uri[0]['Location'])
+            else:
+                client_id = str(request.GET['client_id'])
+                application = Application.objects.get(client_id=client_id)
+
+                log.debug("Redirecting " + application.redirect_uris+"?error=access_denied")
+                return redirect(application.redirect_uris+"?error=access_denied")
         else:
-            return redirect(users.create_login_url(redirect_url))
-    else:
+            return Response({
+                'status': False,
+                'message': 'Method not allowed'
+            }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    except ServiceUnavailable:
         return Response({
             'status': False,
-            'message': 'Method not allowed'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            'message': 'Internal Server Error'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+def oauth_login(request):
+    try:
+        if request.method == 'GET':
+            client_id = str(request.GET['client_id'])
+            callback_url = str(request.GET['redirect_uri'])
+            print client_id + " - "
+
+            redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?state=random_state_string&client_id=" + client_id + \
+                           "&response_type=code&redirect_uri="+callback_url
+
+            if is_logged_in():
+                # check
+                application = {'name': "App", 'scopes_descriptions': settings.SCOPES,
+                               'scope': " ".join(settings.SCOPES),
+                               'redirect_uri': callback_url,
+                               'client_id': client_id}
+
+                return render(request, "oauth2_provider/authorize.html", application)
+            else:
+                return redirect(users.create_login_url(redirect_url))
+        elif request.method == 'POST':
+            if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
+                data = {
+                    'client_id': request.POST.get('client_id'),
+                    'redirect_uri': request.POST.get('redirect_uri'),
+                    'response_type': request.POST.get('response_type', None),
+                    'state': request.POST.get('state', None),
+                    'scopes': request.POST.get('scope'),
+                    'x-tyk-authorization': '352d20ee67be67f6340b4c0605b044b7',
+                    'Authorization': '352d20ee67be67f6340b4c0605b044b7',
+                    'key_rules': {
+                            "allowance": 1000,
+                            "rate": 1000,
+                            "per": 60,
+                            "expires": 0,
+                            "quota_max": -1,
+                            "quota_renews": 1406121006,
+                            "quota_remaining": 0,
+                            "quota_renewal_rate": 60,
+                            "access_rights": {
+                                "APIID1": {
+                                    "api_name": "PDS API",
+                                    "api_id": "f529d81c72874a8f59e370e827a62e6c",
+                                    "versions": [
+                                        "Default"
+                                    ]
+                                }
+                            },
+                            "org_id": "1",
+                            "oauth_client_id": request.POST.get('client_id'),
+                            "hmac_enabled": False,
+                            "hmac_string": ""
+                    }
+                }
+                # make POST
+                headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    # 'Content-Type': 'application/json',
+                    'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET,
+                    'Authorization': settings.TYK_AUTHORIZATION_NODE_SECRET,
+                    'cache-control': "no-cache"
+                }
+
+                payload = urllib.urlencode(data)
+                r = urlfetch.fetch(url=settings.TYK_OAUTH_AUTHORIZE_ENDPOINT,
+                                   payload=payload,
+                                   method=urlfetch.POST,
+                                   headers=headers)
+
+                response = {'message': r.content, 'status_code': r.status}
+                if r.status_code == 200:
+                    print r.content
+                    print r.status_code
+                    # headers: dictionary of headers returned by the server"
+                    return render(request, "authorize_error.html", response)
+                else:
+                    print "Error"
+                    print r.content
+                    print r.status_code
+                    return render(request, "authorize_error.html", response)
+            else:
+                log.debug("Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied")
+                return redirect(request.POST.get('redirect_uri')+"?error=access_denied")
+        else:
+            return Response({
+                'status': False,
+                'message': 'Method not allowed'
+            }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    except ServiceUnavailable:
+        return Response({
+            'status': False,
+            'message': 'Internal Server Error'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+class ApplicationRegistration(CreateView):
+    """
+    View used to register a new Application for the request.user
+    """
+    template_name = "oauth2_provider/application_registration_form.html"
+
+    def get_form_class(self):
+        """
+        Returns the form class for the application model
+        """
+        return modelform_factory(
+            Application,
+            fields=('name', 'client_id', 'client_secret', 'client_type',
+                    'authorization_grant_type', 'redirect_uris')
+        )
+
+
+class ApplicationOwnerIsUserMixin():
+    """
+    This mixin is used to provide an Application queryset filtered by the current request.user.
+    """
+    fields = '__all__'
+
+    def get_queryset(self):
+        print get_user_id()
+        profile = Profile.objects.get(appscale_user_id=get_user_id())
+
+        return Application.objects.filter(user_id=profile.id)
+
+
+class ApplicationList(ApplicationOwnerIsUserMixin, ListView):
+    """
+    List view for all the applications owned by the request.user
+    """
+    context_object_name = 'applications'
+    template_name = "oauth2_provider/application_list.html"
+
+
+class ApplicationDetail(ApplicationOwnerIsUserMixin, DetailView):
+    """
+    Detail view for an application instance owned by the request.user
+    """
+    context_object_name = 'application'
+    template_name = "oauth2_provider/application_detail.html"
+
+
+class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
+    """
+    View used to update an application owned by the request.user
+    """
+    context_object_name = 'application'
+    template_name = "oauth2_provider/application_form.html"
+
+
+class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
+    """
+    View used to delete an application owned by the request.user
+    """
+    context_object_name = 'application'
+    success_url = reverse_lazy('oauth2_provider:list')
+    template_name = "oauth2_provider/application_confirm_delete.html"
+
+
+class Struct(object):
+    def __init__(self, adict):
+        """Convert a dictionary to a class
+
+        @param :adict Dictionary
+        """
+        self.__dict__.update(adict)
+        for k, v in adict.items():
+            if isinstance(v, dict):
+                self.__dict__[k] = Struct(v)
+
+
+def get_object(adict):
+    """Convert a dictionary to a class
+
+    @param :adict Dictionary
+    @return :class:Struct
+    """
+    return Struct(adict)

@@ -17,7 +17,7 @@ from django.contrib import admin
 
 from iupdsmanager.views import index, profile, create_user, logout,\
     create_contact, contact_details, my_contacts, create_graphs,\
-    drop_graphs, create_graph_user, oauth_authorize
+    drop_graphs, create_graph_user, oauth_authorize, oauth_login
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
@@ -35,5 +35,6 @@ urlpatterns = [
     url(r'^api/v1/create_graphs/$', create_graphs, name='create_graphs'),
     url(r'^api/v1/auth/logout/$', logout, name='logout'),
     url(r'^oauth/authorize/$', oauth_authorize, name='oauth_authorize'),
-    # url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    url(r'^o/', include('iupdsmanager.urls', namespace='oauth2_provider')),
+    url(r'^oauth/login/$', oauth_login, name='oauth_login'),
 ]
