@@ -284,6 +284,13 @@ def create_graph_user(request):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['POST'])
+def tyk_notification(request):
+    return Response({
+        'status': "ok"
+    }, status=status.HTTP_201_CREATED)
+
+
 def is_logged_in():
     try:
         user = users.get_current_user()
@@ -718,84 +725,65 @@ def oauth_login(request):
     try:
         if request.method == 'GET':
             client_id = str(request.GET['client_id'])
-            callback_url = str(request.GET['redirect_uri'])
-            print client_id + " - "
+            redirect_uri = str(request.GET['redirect_uri'])
 
-            redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?state=random_state_string&client_id=" + client_id + \
-                           "&response_type=code&redirect_uri="+callback_url
+            post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + \
+                           "&response_type=code&redirect_uri="+redirect_uri+"&state=random_state_string"
 
             if is_logged_in():
                 # check
                 application = {'name': "App", 'scopes_descriptions': settings.SCOPES,
                                'scope': " ".join(settings.SCOPES),
-                               'redirect_uri': callback_url,
+                               'redirect_uri': redirect_uri,
                                'client_id': client_id}
 
                 return render(request, "oauth2_provider/authorize.html", application)
             else:
-                return redirect(users.create_login_url(redirect_url))
+                print "post login url"
+                print post_login_redirect_url
+                return redirect(users.create_login_url(post_login_redirect_url))
+
         elif request.method == 'POST':
             if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
                 data = {
                     'client_id': request.POST.get('client_id'),
                     'redirect_uri': request.POST.get('redirect_uri'),
-                    'response_type': request.POST.get('response_type', None),
-                    'state': request.POST.get('state', None),
-                    'scopes': request.POST.get('scope'),
-                    'x-tyk-authorization': '352d20ee67be67f6340b4c0605b044b7',
-                    'Authorization': '352d20ee67be67f6340b4c0605b044b7',
-                    'key_rules': {
-                            "allowance": 1000,
-                            "rate": 1000,
-                            "per": 60,
-                            "expires": 0,
-                            "quota_max": -1,
-                            "quota_renews": 1406121006,
-                            "quota_remaining": 0,
-                            "quota_renewal_rate": 60,
-                            "access_rights": {
-                                "APIID1": {
-                                    "api_name": "PDS API",
-                                    "api_id": "f529d81c72874a8f59e370e827a62e6c",
-                                    "versions": [
-                                        "Default"
-                                    ]
-                                }
-                            },
-                            "org_id": "1",
-                            "oauth_client_id": request.POST.get('client_id'),
-                            "hmac_enabled": False,
-                            "hmac_string": ""
-                    }
+                    'response_type': request.POST.get('response_type', "code"),
+                    'key_rules': '%7B&allowance=1000%2C&rate=1000%2C&per=60%2C&expires=0%2C\"a_max=-1%2C\"a_renews=1406121006%2C\"a_remaining=0%2C\"a_renewal_rate=60%2C&access_rights=%7B&APIID1=%7B&api_name=PDS%20API%20v1%2C" \
+                                              "&api_id=f56fbc1dd94f46bb55b2a279f9c8f5e6%2C&versions=%5B&Default=&%5D=&%7D=&%7D%2C=&org_id=1%2C&oauth_client_id=e5fd3e7a1594412b68e6659f06c42676%2C&hmac_enabled=False%2C&hmac_string=%22%22'
                 }
-                # make POST
+
+                payload = "response_type=code&client_id=e5fd3e7a1594412b68e6659f06c42676" \
+                          "&redirect_uri=http%3A%2F%2Fthird-party-app.dev%3A9190%2Fapi%2Fv1%2Ftoken_callback%2F" \
+                          "&key_rules=%7B&allowance=1000%2C&rate=1000%2C&per=60%2C&expires=0%2C\"a_max=-1%2C\"a_renews=1406121006%2C\"a_remaining=0%2C\"a_renewal_rate=60%2C&access_rights=%7B&APIID1=%7B&api_name=PDS%20API%20v1%2C" \
+                          "&api_id=f56fbc1dd94f46bb55b2a279f9c8f5e6%2C&versions=%5B&Default=&%5D=&%7D=&%7D%2C=&org_id=1%2C&oauth_client_id=e5fd3e7a1594412b68e6659f06c42676%2C&hmac_enabled=False%2C&hmac_string=%22%22"
+
                 headers = {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    # 'Content-Type': 'application/json',
                     'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET,
-                    'Authorization': settings.TYK_AUTHORIZATION_NODE_SECRET,
                     'cache-control': "no-cache"
                 }
 
-                payload = urllib.urlencode(data)
+                # make POST
                 r = urlfetch.fetch(url=settings.TYK_OAUTH_AUTHORIZE_ENDPOINT,
                                    payload=payload,
                                    method=urlfetch.POST,
                                    headers=headers)
 
-                response = {'message': r.content, 'status_code': r.status}
+                response = {'message': r.content, 'status_code': r.status_code}
                 if r.status_code == 200:
                     print r.content
                     print r.status_code
-                    # headers: dictionary of headers returned by the server"
-                    return render(request, "authorize_error.html", response)
+
+                    return render(request, "oauth2_provider/authorize_error.html", response)
                 else:
                     print "Error"
                     print r.content
                     print r.status_code
-                    return render(request, "authorize_error.html", response)
+                    return render(request, "oauth2_provider/authorize_error.html", response)
             else:
                 log.debug("Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied")
+                print "Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied"
                 return redirect(request.POST.get('redirect_uri')+"?error=access_denied")
         else:
             return Response({
