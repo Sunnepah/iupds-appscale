@@ -6,7 +6,7 @@ import urllib2
 from google.appengine.api import urlfetch
 
 # from django.http import HttpResponseRedirect, HttpRequest, HttpResponse
-# import json
+import simplejson
 
 from .models import Profile, Contact, Address, Application, Grant, AccessToken
 from django.shortcuts import render, redirect
@@ -62,10 +62,7 @@ def profile(request):
         else:
             users.create_login_url('/')
     else:
-        return Response({
-            'status': False,
-            'message': 'Method not allowed'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status': False, 'message': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['POST'])
@@ -74,10 +71,7 @@ def logout(request):
         logout_url = users.create_logout_url("/", _auth_domain=None)
         return Response({'logout_url': logout_url}, status=status.HTTP_200_OK)
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'The user is not logged in'
-        }, status=status.HTTP_410_GONE)
+        return Response({'status': 'Bad request', 'message': 'The user is not logged in'}, status=status.HTTP_410_GONE)
 
 
 @api_view(['POST'])
@@ -104,10 +98,8 @@ def create_user(request):
     #         else:
     #             return Response({'response': result}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'Account could not be created with received data.'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status': 'Bad request', 'message': 'Account could not be created with received data.'},
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 def index(request):
@@ -157,19 +149,15 @@ def create_contact(request):
             if rdf:
                 return Response({'rdf': rdf}, status=status.HTTP_200_OK)
             else:
-                return Response({
-                    'status': 'Can not save data',
-                    'message': 'Error saving to personal store'
-                }, status=status.HTTP_304_NOT_MODIFIED)
+                return Response({'status': 'Can not save data', 'message': 'Error saving to personal store'},
+                                status=status.HTTP_304_NOT_MODIFIED)
 
-            # user = get_user_data()
+                # user = get_user_data()
 
         # return Response({"response": request.data['email']}, status=status.HTTP_200_OK)
         else:
-            return Response({
-                'status': 'Unauthorized',
-                'message': 'User not logged in'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'status': 'Unauthorized', 'message': 'User not logged in'},
+                            status=status.HTTP_401_UNAUTHORIZED)
     except UserNotFoundError:
         return None
 
@@ -186,10 +174,8 @@ def contact_details(request):
             return Response({'email': email, 'telephone': telephone, 'address': address, 'person': person},
                             status=status.HTTP_200_OK)
         else:
-            return Response({
-                'status': 'Unauthorized',
-                'message': 'User not logged in'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'status': 'Unauthorized', 'message': 'User not logged in'},
+                            status=status.HTTP_401_UNAUTHORIZED)
     except UserNotFoundError:
         return Response({'response': 'No content'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -210,10 +196,8 @@ def my_contacts(request):
             return Response({'email': email, 'telephone': telephone, 'address': address, 'person': person},
                             status=status.HTTP_200_OK)
         else:
-            return Response({
-                'status': 'Unauthorized',
-                'message': 'User not logged in'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'status': 'Unauthorized', 'message': 'User not logged in'},
+                            status=status.HTTP_401_UNAUTHORIZED)
     except UserNotFoundError:
         return Response({'response': 'No content'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -227,20 +211,13 @@ def create_graphs(request):
             create_graph(get_telephone_graph_uri())
             create_graph(get_address_graph_uri())
 
-            return Response({
-                'status': 'Graphs created!'
-            }, status=status.HTTP_200_OK)
+            return Response({'status': 'Graphs created!'}, status=status.HTTP_200_OK)
         except Exception as e:
             print e
-            return Response({
-                'status': 'Server error',
-                'message': 'Not successful'
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response({'status': 'Server error', 'message': 'Not successful'}, status=status.HTTP_404_NOT_FOUND)
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'Graph creation was not successful'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status': 'Bad request', 'message': 'Graph creation was not successful'},
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['DELETE'])
@@ -255,15 +232,10 @@ def drop_graphs(request):
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
             print e
-            return Response({
-                'status': 'Server error',
-                'message': 'Not successful'
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response({'status': 'Server error', 'message': 'Not successful'}, status=status.HTTP_404_NOT_FOUND)
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'Not successful'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status': 'Bad request', 'message': 'Not successful'},
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['POST'])
@@ -272,23 +244,16 @@ def create_graph_user(request):
         username = get_user_id()
         create_sql_graph_user(username)
 
-        return Response({
-            'status': 'User created!'
-        }, status=status.HTTP_201_CREATED)
+        return Response({'status': 'User created!'}, status=status.HTTP_201_CREATED)
 
     except Exception as e:
         print e
-        return Response({
-            'status': 'Server error',
-            'message': 'Not successful'
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response({'status': 'Server error', 'message': 'Not successful'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['POST'])
 def tyk_notification(request):
-    return Response({
-        'status': "ok"
-    }, status=status.HTTP_201_CREATED)
+    return Response({'status': "ok"}, status=status.HTTP_201_CREATED)
 
 
 def is_logged_in():
@@ -346,8 +311,7 @@ def _build_address(data, user_profile):
     else:
         street = data["street1"]
     return Address(street=street, city=data["city"], post_code=data["post_code"], profile_id=user_profile.id,
-                   primary=True,
-                   country=data["country"])
+                   primary=True, country=data["country"])
 
 
 def generate_contact_rdf(data):
@@ -366,7 +330,7 @@ def generate_contact_rdf(data):
         email = data['email']
 
         # uid = get_profile().uid
-        user_account_identifier = get_person_graph_uri()    # + str(uid)
+        user_account_identifier = get_person_graph_uri()  # + str(uid)
 
         rdf_persons += create_triple(user_account_identifier, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                      "http://www.w3.org/2006/vcard/ns#Individual")
@@ -410,8 +374,8 @@ def generate_contact_rdf(data):
         formatted_email = re.sub('[^0-9a-zA-Z]+', '-', str(email).lower())
         rdf_emails += create_triple(user_account_identifier, "http://www.w3.org/2006/vcard/ns#hasEmail",
                                     get_email_graph_uri() + "/" + formatted_email)
-        rdf_emails += create_triple(get_email_graph_uri() + "/" + formatted_email, "http://www.w3.org/2006/vcard/ns#hasValue",
-                                    "mailto:" + email)
+        rdf_emails += create_triple(get_email_graph_uri() + "/" + formatted_email,
+                                    "http://www.w3.org/2006/vcard/ns#hasValue", "mailto:" + email)
         rdf_emails += create_triple(get_email_graph_uri() + "/" + formatted_email,
                                     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                     "http://www.w3.org/2006/vcard/ns#Work")
@@ -587,7 +551,7 @@ def get_bindings(graph):
                     str_triples = "%s: <<None>>" % v
                 # print str_triples.encode('utf-8')
                 rdf += str_triples.encode('utf-8') + '\n'
-            # print
+                # print
         return rdf
     except:
         return False
@@ -640,7 +604,6 @@ def get_person_graph_uri():
 
 
 def remote_command(command):
-
     values = {'cmd': command}
 
     data = urllib.urlencode(values)
@@ -670,15 +633,13 @@ def oauth_authorize(request):
             # callback_url = str(request.GET['callback_url'])
             print client_id + " - "
 
-            redirect_url = "http://localhost:9805/oauth/authorize/?state=random_state_string&client_id=" + client_id + \
-                           "&response_type=code"
+            redirect_url = "http://localhost:9805/oauth/authorize/?state=random_state_string&client_id=" + client_id + "&response_type=code"
 
             if is_logged_in():
                 # check
                 app = Application.objects.get(client_id=client_id)
                 application = {'name': getattr(app, 'name'), 'scopes_descriptions': settings.SCOPES,
-                               'scope': " ".join(settings.SCOPES),
-                               'redirect_uri': getattr(app, 'redirect_uris'),
+                               'scope': " ".join(settings.SCOPES), 'redirect_uri': getattr(app, 'redirect_uris'),
                                'client_id': getattr(app, 'client_id')}
 
                 return render(request, "oauth2_provider/authorize.html", application)
@@ -691,15 +652,12 @@ def oauth_authorize(request):
                 grant = AuthorizationCodeGrantPds()
 
                 userprofile = Profile.objects.get(appscale_user_id=get_user_id())
-                request_ = {
-                    'client_id': request.POST.get('client_id'),
-                    'redirect_uri': request.POST.get('redirect_uri'),
-                    'response_type': request.POST.get('response_type', None),
-                    'state': request.POST.get('state', None),
-                    'client': Application.objects.get(client_id=client_id),
-                    'user': userprofile,
-                    'scopes': request.POST.get('scope')
-                }
+                request_ = {'client_id': request.POST.get('client_id'),
+                            'redirect_uri': request.POST.get('redirect_uri'),
+                            'response_type': request.POST.get('response_type', None),
+                            'state': request.POST.get('state', None),
+                            'client': Application.objects.get(client_id=client_id), 'user': userprofile,
+                            'scopes': request.POST.get('scope')}
 
                 uri = grant.create_authorization_response(get_object(request_), token)
                 return redirect(uri[0]['Location'])
@@ -707,18 +665,13 @@ def oauth_authorize(request):
                 client_id = str(request.GET['client_id'])
                 application = Application.objects.get(client_id=client_id)
 
-                log.debug("Redirecting " + application.redirect_uris+"?error=access_denied")
-                return redirect(application.redirect_uris+"?error=access_denied")
+                log.debug("Redirecting " + application.redirect_uris + "?error=access_denied")
+                return redirect(application.redirect_uris + "?error=access_denied")
         else:
-            return Response({
-                'status': False,
-                'message': 'Method not allowed'
-            }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response({'status': False, 'message': 'Method not allowed'},
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
     except ServiceUnavailable:
-        return Response({
-            'status': False,
-            'message': 'Internal Server Error'
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response({'status': False, 'message': 'Internal Server Error'}, status=status.HTTP_404_NOT_FOUND)
 
 
 def oauth_login(request):
@@ -726,56 +679,85 @@ def oauth_login(request):
         if request.method == 'GET':
             client_id = str(request.GET['client_id'])
             redirect_uri = str(request.GET['redirect_uri'])
+            # Get requesting Client, redirect with error if not found
+            Application.objects.get(client_id=client_id)
 
-            post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + \
-                           "&response_type=code&redirect_uri="+redirect_uri+"&state=random_state_string"
+            post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + "&response_type=code&redirect_uri=" + redirect_uri + "&state=random_state_string"
 
             if is_logged_in():
-                # check
                 application = {'name': "App", 'scopes_descriptions': settings.SCOPES,
-                               'scope': " ".join(settings.SCOPES),
-                               'redirect_uri': redirect_uri,
-                               'client_id': client_id}
+                               'scope': " ".join(settings.SCOPES), 'redirect_uri': redirect_uri, 'client_id': client_id}
 
                 return render(request, "oauth2_provider/authorize.html", application)
             else:
-                print "post login url"
-                print post_login_redirect_url
                 return redirect(users.create_login_url(post_login_redirect_url))
-
         elif request.method == 'POST':
             if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
-                data = {
-                    'client_id': request.POST.get('client_id'),
-                    'redirect_uri': request.POST.get('redirect_uri'),
-                    'response_type': request.POST.get('response_type', "code"),
-                    'key_rules': '%7B&allowance=1000%2C&rate=1000%2C&per=60%2C&expires=0%2C\"a_max=-1%2C\"a_renews=1406121006%2C\"a_remaining=0%2C\"a_renewal_rate=60%2C&access_rights=%7B&APIID1=%7B&api_name=PDS%20API%20v1%2C" \
-                                              "&api_id=f56fbc1dd94f46bb55b2a279f9c8f5e6%2C&versions=%5B&Default=&%5D=&%7D=&%7D%2C=&org_id=1%2C&oauth_client_id=e5fd3e7a1594412b68e6659f06c42676%2C&hmac_enabled=False%2C&hmac_string=%22%22'
-                }
 
-                payload = "response_type=code&client_id=e5fd3e7a1594412b68e6659f06c42676" \
-                          "&redirect_uri=http%3A%2F%2Fthird-party-app.dev%3A9190%2Fapi%2Fv1%2Ftoken_callback%2F" \
-                          "&key_rules=%7B&allowance=1000%2C&rate=1000%2C&per=60%2C&expires=0%2C\"a_max=-1%2C\"a_renews=1406121006%2C\"a_remaining=0%2C\"a_renewal_rate=60%2C&access_rights=%7B&APIID1=%7B&api_name=PDS%20API%20v1%2C" \
-                          "&api_id=f56fbc1dd94f46bb55b2a279f9c8f5e6%2C&versions=%5B&Default=&%5D=&%7D=&%7D%2C=&org_id=1%2C&oauth_client_id=e5fd3e7a1594412b68e6659f06c42676%2C&hmac_enabled=False%2C&hmac_string=%22%22"
+                # data = { 'response_type': 'code',
+                #          'client_id': str(request.POST.get('client_id')).strip(),
+                #          'redirect_uri': str(request.POST.get('redirect_uri')).strip(),
+                #          'state': str(request.POST.get('state')).strip(),
+                #          'scope': str(request.POST.get('scope')).strip(),
+                #          'key_rules': {"allowance": 1000, "rate": 1000, "per": 60, "expires": -1, "quota_max": -1,
+                #                        "quota_renews": 1406121006, "quota_remaining": 0, "quota_renewal_rate": 60,
+                #                        "access_rights": {"APIID1": {"api_name": settings.PDS_API_NAME,
+                #                                                     "api_id": "APIID1", "versions": ["Default"]}},
+                #                        "org_id": "1",
+                #                        "oauth_client_id": str(request.POST.get('client_id')).strip(),
+                #                        "hmac_enabled": False,
+                #                        "hmac_string": ""},
+                #     }
 
-                headers = {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET,
-                    'cache-control': "no-cache"
-                }
+                key_rules = {"allowance": 1000, "rate": 1000, "per": 60, "expires": 0, "quota_max": -1,
+                             "quota_renews": 1406121006, "quota_remaining": 0, "quota_renewal_rate": 60,
+                             "access_rights": {"APIID1": {"api_name": "PDS API v1", "api_id": settings.PDS_API_ID,
+                                                          "versions": ["Default"]}}, "org_id": "1",
+                             "oauth_client_id": str(request.POST.get('client_id')).strip(), "hmac_enabled": False,
+                             "hmac_string": ""}
+
+                data = {'response_type': 'code', 'client_id': str(request.POST.get('client_id')).strip(),
+                        'redirect_uri': str(request.POST.get('redirect_uri')).strip(),
+                        'state': str(request.POST.get('state')).strip(),
+                        'scope': str(request.POST.get('scope')).strip(), 'key_rules': key_rules}
+
+                print data
+
+                payload = urllib.urlencode(data)
+
+                headers = {'Content-Type': 'application/x-www-form-urlencoded',
+                           'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
 
                 # make POST
-                r = urlfetch.fetch(url=settings.TYK_OAUTH_AUTHORIZE_ENDPOINT,
-                                   payload=payload,
-                                   method=urlfetch.POST,
+                print payload
+                r = urlfetch.fetch(url=settings.TYK_OAUTH_AUTHORIZE_ENDPOINT, payload=payload, method=urlfetch.POST,
                                    headers=headers)
 
                 response = {'message': r.content, 'status_code': r.status_code}
                 if r.status_code == 200:
+                    response = simplejson.loads(r.content)
+                    print "serialized code"
+                    print response['code']
                     print r.content
-                    print r.status_code
 
-                    return render(request, "oauth2_provider/authorize_error.html", response)
+                    # save
+                    grant = AuthorizationCodeGrantPds()
+
+                    user_profile = Profile.objects.get(appscale_user_id=get_user_id())
+
+                    client_id = str(request.GET.get('client_id'))
+                    application = Application.objects.get(client_id=client_id)
+
+                    request_ = {'client_id': request.POST.get('client_id'),
+                                'redirect_uri': request.POST.get('redirect_uri'),
+                                'response_type': request.POST.get('response_type', "code"),
+                                'state': request.POST.get('state', None), 'client': application, 'user': user_profile,
+                                'scopes': request.POST.get('scope')}
+
+                    code = {'code': response['code']}
+                    grant.save_authorization_client_code(get_object(request_), code)
+
+                    return redirect(response['redirect_to'])
                 else:
                     print "Error"
                     print r.content
@@ -784,17 +766,14 @@ def oauth_login(request):
             else:
                 log.debug("Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied")
                 print "Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied"
-                return redirect(request.POST.get('redirect_uri')+"?error=access_denied")
+                return redirect(request.POST.get('redirect_uri') + "?error=access_denied")
         else:
-            return Response({
-                'status': False,
-                'message': 'Method not allowed'
-            }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response({'status': False, 'message': 'Method not allowed'},
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
     except ServiceUnavailable:
-        return Response({
-            'status': False,
-            'message': 'Internal Server Error'
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response({'status': False, 'message': 'Internal Server Error'}, status=status.HTTP_404_NOT_FOUND)
+    except Application.DoesNotExist:
+        return redirect(request.GET.get('redirect_uri') + "?error=Application with the client_id does not exist!")
 
 
 class ApplicationRegistration(CreateView):
@@ -807,11 +786,8 @@ class ApplicationRegistration(CreateView):
         """
         Returns the form class for the application model
         """
-        return modelform_factory(
-            Application,
-            fields=('name', 'client_id', 'client_secret', 'client_type',
-                    'authorization_grant_type', 'redirect_uris')
-        )
+        return modelform_factory(Application, fields=(
+        'name', 'client_id', 'client_secret', 'client_type', 'authorization_grant_type', 'redirect_uris'))
 
 
 class ApplicationOwnerIsUserMixin():
@@ -875,7 +851,7 @@ class Struct(object):
 def get_object(adict):
     """Convert a dictionary to a class
 
-    @param :adict Dictionary
+    @param :a dict Dictionary
     @return :class:Struct
     """
     return Struct(adict)
