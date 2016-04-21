@@ -694,24 +694,9 @@ def oauth_login(request):
         elif request.method == 'POST':
             if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
 
-                # data = { 'response_type': 'code',
-                #          'client_id': str(request.POST.get('client_id')).strip(),
-                #          'redirect_uri': str(request.POST.get('redirect_uri')).strip(),
-                #          'state': str(request.POST.get('state')).strip(),
-                #          'scope': str(request.POST.get('scope')).strip(),
-                #          'key_rules': {"allowance": 1000, "rate": 1000, "per": 60, "expires": -1, "quota_max": -1,
-                #                        "quota_renews": 1406121006, "quota_remaining": 0, "quota_renewal_rate": 60,
-                #                        "access_rights": {"APIID1": {"api_name": settings.PDS_API_NAME,
-                #                                                     "api_id": "APIID1", "versions": ["Default"]}},
-                #                        "org_id": "1",
-                #                        "oauth_client_id": str(request.POST.get('client_id')).strip(),
-                #                        "hmac_enabled": False,
-                #                        "hmac_string": ""},
-                #     }
-
                 key_rules = {"allowance": 1000, "rate": 1000, "per": 60, "expires": 0, "quota_max": -1,
                              "quota_renews": 1406121006, "quota_remaining": 0, "quota_renewal_rate": 60,
-                             "access_rights": {"APIID1": {"api_name": "PDS API v1", "api_id": settings.PDS_API_ID,
+                             "access_rights": {"APIID1": {"api_name": settings.PDS_API_NAME, "api_id": settings.PDS_API_ID,
                                                           "versions": ["Default"]}}, "org_id": "1",
                              "oauth_client_id": str(request.POST.get('client_id')).strip(), "hmac_enabled": False,
                              "hmac_string": ""}
@@ -720,16 +705,13 @@ def oauth_login(request):
                         'redirect_uri': str(request.POST.get('redirect_uri')).strip(),
                         'state': str(request.POST.get('state')).strip(),
                         'scope': str(request.POST.get('scope')).strip(), 'key_rules': key_rules}
-
                 print data
 
                 payload = urllib.urlencode(data)
-
                 headers = {'Content-Type': 'application/x-www-form-urlencoded',
                            'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
 
                 # make POST
-                print payload
                 r = urlfetch.fetch(url=settings.TYK_OAUTH_AUTHORIZE_ENDPOINT, payload=payload, method=urlfetch.POST,
                                    headers=headers)
 
@@ -759,9 +741,7 @@ def oauth_login(request):
 
                     return redirect(response['redirect_to'])
                 else:
-                    print "Error"
-                    print r.content
-                    print r.status_code
+                    print "Error " + r.content + " - " + r.status_code
                     return render(request, "oauth2_provider/authorize_error.html", response)
             else:
                 log.debug("Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied")

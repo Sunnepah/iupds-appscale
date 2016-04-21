@@ -158,3 +158,7 @@ class AuthorizationCodeGrantPds(AuthorizationCodeGrant):
             'state': request.state,
             'request': request,
         }
+
+    def save_authorization_client_code(self, request, grant):
+        request_validator.save_authorization_code(request.client_id, grant, request)
+
