@@ -694,22 +694,14 @@ def oauth_login(request):
         elif request.method == 'POST':
             if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
 
-                key_rules = {"allowance": 1000, "rate": 1000, "per": 60, "expires": 0, "quota_max": -1,
-                             "quota_renews": 1406121006, "quota_remaining": 0, "quota_renewal_rate": 60,
-                             "access_rights": {"APIID1": {"api_name": settings.PDS_API_NAME, "api_id": settings.PDS_API_ID,
-                                                          "versions": ["Default"]}}, "org_id": "1",
-                             "oauth_client_id": str(request.POST.get('client_id')).strip(), "hmac_enabled": False,
-                             "hmac_string": ""}
+                payload = 'response_type=code&client_id='+str(request.POST.get('client_id')).strip()+'&redirect_uri='+str(request.POST.get('redirect_uri')).strip()+'&state='+str(request.POST.get('state')).strip()+'&scope='+str(request.POST.get('scope')).strip()+'&key_rules={"allowance":1000,"rate":1000,"per":60,"expires":0,"quota_max":-1,"quota_renews":1406121006,"quota_remaining":0,"quota_renewal_rate":60,"access_rights":{"APIID1":{"api_name":"'+settings.PDS_API_NAME+'","api_id":"'+settings.PDS_API_ID+'","versions":["Default"]}},"org_id":"1","oauth_client_id":"'+str(request.POST.get('client_id')).strip()+'","hmac_enabled":false,"hmac_string":""}'
 
-                data = {'response_type': 'code', 'client_id': str(request.POST.get('client_id')).strip(),
-                        'redirect_uri': str(request.POST.get('redirect_uri')).strip(),
-                        'state': str(request.POST.get('state')).strip(),
-                        'scope': str(request.POST.get('scope')).strip(), 'key_rules': key_rules}
-                print data
-
-                payload = urllib.urlencode(data)
                 headers = {'Content-Type': 'application/x-www-form-urlencoded',
                            'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
+
+                print payload
+                print urllib.unquote(payload)
+                print payload
 
                 # make POST
                 r = urlfetch.fetch(url=settings.TYK_OAUTH_AUTHORIZE_ENDPOINT, payload=payload, method=urlfetch.POST,
@@ -741,7 +733,7 @@ def oauth_login(request):
 
                     return redirect(response['redirect_to'])
                 else:
-                    print "Error " + r.content + " - " + r.status_code
+                    print "Error " + str(r.content) + " - " + str(r.status_code)
                     return render(request, "oauth2_provider/authorize_error.html", response)
             else:
                 log.debug("Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied")
@@ -754,6 +746,17 @@ def oauth_login(request):
         return Response({'status': False, 'message': 'Internal Server Error'}, status=status.HTTP_404_NOT_FOUND)
     except Application.DoesNotExist:
         return redirect(request.GET.get('redirect_uri') + "?error=Application with the client_id does not exist!")
+
+
+def oauth_tyk_notify(request):
+    try:
+        if request.method == 'POST':
+            pass
+        else:
+            return Response({'status': False, 'message': 'Method not allowed'},
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    except:
+        return Response({'status': False, 'message': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class ApplicationRegistration(CreateView):
