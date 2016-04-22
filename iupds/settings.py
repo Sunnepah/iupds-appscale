@@ -309,6 +309,8 @@ _DEFAULT_SCOPES = []
 # TYK ENDPOINTS
 
 TYK_DASHBOARD_API_CREDENTIAL = 'eefef3f1987544244d7d64f42021ef63'
+TYK_API_ORG_ID = "5710f36356c02c0c17000001"
+TYK_API_POLICY_ID = "5711f41656c02c0c17000003"
 
 TYK_GATEWAY_LISTEN_PORT = '8080'
 TYK_GATEWAY_HOST = 'http://my-tyk-instance.dev'
@@ -339,6 +341,10 @@ TYK_CLIENTS_ENDPOINT = TYK_GATEWAY + '/tyk/oauth/clients/'
 TYK_RELOAD_ENDPOINT = TYK_GATEWAY + '/tyk/reload/'
 # Health-check: get a snapshot of your API and tyk node performance
 TYK_HEALTH_ENDPOINT = TYK_GATEWAY + '/tyk/health/'
+
+# Invalidate Refresh Token
+# DELETE
+TYK_INVALIDATE_REFRESH_TOKEN = '/tyk/oauth/refresh/{key}?api_id={api_id}'
 
 # APPSCALE_APP_URL = 'http://192.168.33.10:8080'
 APPSCALE_APP_URL = 'http://localhost:9805'
