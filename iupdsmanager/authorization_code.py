@@ -162,3 +162,7 @@ class AuthorizationCodeGrantPds(AuthorizationCodeGrant):
     def save_authorization_client_code(self, request, grant):
         request_validator.save_authorization_code(request.client_id, grant, request)
 
+    def save_bearer_token(self, token, request):
+        request_validator.save_bearer_token(token, request)
+
+

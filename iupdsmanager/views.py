@@ -5,17 +5,17 @@ import urllib
 import urllib2
 from google.appengine.api import urlfetch
 
-# from django.http import HttpResponseRedirect, HttpRequest, HttpResponse
 import simplejson
+import json
 
-from .models import Profile, Contact, Address, Application, Grant, AccessToken
+from .models import Profile, Contact, Address, Application, Grant, AccessToken, RefreshToken
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse_lazy
-from django.utils import timezone
+from django.http import HttpResponse
 from iupds import settings
 
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, renderer_classes,parser_classes
 from rest_framework.response import Response
 
 from sparqlwrapper.SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, TURTLE, SPARQLWrapper2, SPARQLExceptions
@@ -43,6 +43,7 @@ SPARQL_AUTH_ENDPOINT = settings.SPARQL_AUTH_ENDPOINT
 
 log = logging.getLogger('oauth2_provider')
 logging.basicConfig(level=logging.DEBUG)
+# log = logging.getLogger(__name__)
 
 
 class ServiceUnavailable(APIException):
@@ -249,11 +250,6 @@ def create_graph_user(request):
     except Exception as e:
         print e
         return Response({'status': 'Server error', 'message': 'Not successful'}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(['POST'])
-def tyk_notification(request):
-    return Response({'status': "ok"}, status=status.HTTP_201_CREATED)
 
 
 def is_logged_in():
@@ -633,7 +629,7 @@ def oauth_authorize(request):
             # callback_url = str(request.GET['callback_url'])
             print client_id + " - "
 
-            redirect_url = "http://localhost:9805/oauth/authorize/?state=random_state_string&client_id=" + client_id + "&response_type=code"
+            redirect_url = settings.APPSCALE_APP_URL + "/oauth/authorize/?state=random_state_string&client_id=" + client_id + "&response_type=code"
 
             if is_logged_in():
                 # check
@@ -680,6 +676,9 @@ def oauth_login(request):
             client_id = str(request.GET['client_id'])
             redirect_uri = str(request.GET['redirect_uri'])
             # Get requesting Client, redirect with error if not found
+            print "CLIENT_IT"
+            print str(request.GET['client_id'])
+            print str(request.GET['redirect_uri'])
             Application.objects.get(client_id=client_id)
 
             post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + "&response_type=code&redirect_uri=" + redirect_uri + "&state=random_state_string"
@@ -700,14 +699,11 @@ def oauth_login(request):
                            'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
 
                 print payload
-                print urllib.unquote(payload)
-                print payload
 
                 # make POST
                 r = urlfetch.fetch(url=settings.TYK_OAUTH_AUTHORIZE_ENDPOINT, payload=payload, method=urlfetch.POST,
                                    headers=headers)
 
-                response = {'message': r.content, 'status_code': r.status_code}
                 if r.status_code == 200:
                     response = simplejson.loads(r.content)
                     print "serialized code"
@@ -717,6 +713,8 @@ def oauth_login(request):
                     # save
                     grant = AuthorizationCodeGrantPds()
 
+                    print "User ID"
+                    print get_user_id()
                     user_profile = Profile.objects.get(appscale_user_id=get_user_id())
 
                     client_id = str(request.GET.get('client_id'))
@@ -733,6 +731,7 @@ def oauth_login(request):
 
                     return redirect(response['redirect_to'])
                 else:
+                    response = {'message': r.content, 'status_code': r.status_code}
                     print "Error " + str(r.content) + " - " + str(r.status_code)
                     return render(request, "oauth2_provider/authorize_error.html", response)
             else:
@@ -749,14 +748,55 @@ def oauth_login(request):
 
 
 def oauth_tyk_notify(request):
+    print "oauth_tyk_notify"
     try:
         if request.method == 'POST':
-            pass
-        else:
-            return Response({'status': False, 'message': 'Method not allowed'},
-                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    except:
-        return Response({'status': False, 'message': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            received_json_data = json.loads(request.body)
+            print received_json_data
+            refresh_token = received_json_data['refresh_token']
+            auth_code = received_json_data['auth_code']
+            new_oauth_token = received_json_data['new_oauth_token']
+            old_refresh_token = received_json_data['old_refresh_token']
+            notification_type = received_json_data['notification_type']
+
+            grant = Grant.objects.get(code=auth_code)
+            # application = Application.objects.get(pk=grant.application)
+            # user_profile = Profile.objects.get(pk=grant.user)
+
+            print "Saving access_token"
+
+            token = {
+                'access_token': new_oauth_token,
+                'scope': grant.scope,
+                'refresh_token': refresh_token,
+                'auth_code': auth_code,
+                'old_refresh_token': old_refresh_token,
+                'notification_type': notification_type,
+                'new_oauth_token': new_oauth_token
+            }
+
+            request_ = {
+                'client': grant.application,
+                'user': grant.user,
+                'refresh_token': "",
+                'grant_type': 'authorization_code'
+            }
+
+            # {
+            #     "access_token": "101f6bdb7f05f4dd5579e1ee5f1d46952",
+            #     "expires_in": 3600,
+            #     "refresh_token": "ODhiMGQ5M2EtYjAxOC00OTc4LTUzMTgtZjBhZTQ4ZTEzNWVh",
+            #     "scope": "read",
+            #     "token_type": "bearer"
+            # }
+
+            pds_auth = AuthorizationCodeGrantPds()
+            pds_auth.save_bearer_token(token, get_object(request_))
+
+            return HttpResponse(status=200)
+    except Grant.DoesNotExist or Profile.DoesNotExist or Application.DoesNotExist:
+        print "exception"
+        return HttpResponse(status=404)
 
 
 class ApplicationRegistration(CreateView):

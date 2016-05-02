@@ -60,6 +60,7 @@ INSTALLED_APPS = (
     'authentication',
     'corsheaders',
     # 'pdsoauth2',
+    'pdsoauth',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -160,10 +161,14 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
     ),
-    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     # 'DEFAULT_PERMISSION_CLASSES': (
     #    'rest_framework.permissions.AllowAny',
     # ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
 }
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
@@ -205,7 +210,7 @@ VIRTUOSO_USER = "dba"
 VIRTUOSO_PASSW = "dba"
 
 
-GRAPH_ROOT = 'http://inforegister.ee'
+GRAPH_ROOT = 'http://inforegister.ee/users'
 
 REMOTE_COMMAND_HOST = 'http://192.168.33.19:9000/api/v1/commands/'
 
@@ -342,9 +347,12 @@ TYK_RELOAD_ENDPOINT = TYK_GATEWAY + '/tyk/reload/'
 # Health-check: get a snapshot of your API and tyk node performance
 TYK_HEALTH_ENDPOINT = TYK_GATEWAY + '/tyk/health/'
 
-# Invalidate Refresh Token
-# DELETE
-TYK_INVALIDATE_REFRESH_TOKEN = '/tyk/oauth/refresh/{key}?api_id={api_id}'
+# Invalidate Refresh Token DELETE
+TYK_INVALIDATE_REFRESH_TOKEN = TYK_GATEWAY + '/tyk/oauth/refresh'
 
-# APPSCALE_APP_URL = 'http://192.168.33.10:8080'
-APPSCALE_APP_URL = 'http://localhost:9805'
+TYK_DELETE_ACCESS_TOKEN = TYK_GATEWAY + '/tyk/keys/'
+
+APPSCALE_APP_URL = 'http://192.168.33.10:8080'
+# APPSCALE_APP_URL = 'http://localhost:9805'
+
+TOKEN_DELETE = "5710f36356c02c0c170000019d28b66939a2453870dc257f3e808861"
