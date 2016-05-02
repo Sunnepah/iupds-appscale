@@ -25,7 +25,6 @@ csv_data = csv.reader(open(file_path, 'r'), delimiter=';')
 
 for row in csv_data:
     print row
-    exit(1)
 
     # data in row:
     # ['user_id', 'name', 'username', 'email','pwd', 'user_type', '0', '0', '18','created_at', 'last_login', '', '\n']
@@ -41,6 +40,7 @@ for row in csv_data:
     cursor.execute(query)
     data = cursor.fetchall()
 
+    sql = ""
     if len(data) == 0:
 
         try:
@@ -55,7 +55,7 @@ for row in csv_data:
             if response:
                 user_data = user_client.get_user_data(email)
                 print user_data
-                appscale_user_id = ''
+                appscale_user_id = user_data.user_id
 
                 sql = "INSERT INTO iupdsmanager_profile(uid, user_id_old, email, username, full_name," \
                       " created_at, is_active, admin_type,first_name, last_name, is_admin,updated_at," \
@@ -71,6 +71,7 @@ for row in csv_data:
                           1, 'RU', '', '', 0, '0000-00-00 00:00:00', 0, appscale_user_id
                       )
 
+                print sql
                 # Execute the SQL command
                 cursor.execute(sql)
                 # Commit your changes in the database
@@ -86,6 +87,8 @@ for row in csv_data:
             logging.error(e)
             # Rollback in case there is any error
             mydb.rollback()
+        except AttributeError as e:
+            print e.message
 
     else:
         print 'Possible duplicate, unable to save'
