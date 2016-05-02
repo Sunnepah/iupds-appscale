@@ -20,6 +20,10 @@
       controller: 'DashboardController',
       controllerAs: 'vm',
       templateUrl: '/static/templates/iupdsmanager/graphs.html'
+    }).when('/apps', {
+      controller: 'UserappsController',
+      controllerAs: 'vm',
+      templateUrl: '/static/templates/pdsoauth/apps_list.html'
     }).when('/contact', {
       controller: 'ContactController',
       controllerAs: 'vm',

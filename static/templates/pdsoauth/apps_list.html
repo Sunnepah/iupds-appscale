@@ -1,0 +1,27 @@
+<section class="content-header"><br>
+    <ol class="breadcrumb">
+        <li>
+            <a href="/"> <i class="livicon" data-name="home" data-size="16" data-color="#000"></i>Dashboard</a>
+        </li>
+        <li class="active">Manage Apps</li>
+    </ol>
+</section>
+
+<!--<div ng-controller="UserappsController as vm">-->
+<div>
+<div class="graphs" ng-show="vm.apps">
+    <div class="panel panel-default">
+      <div class="panel-body">
+          <table class="table">
+              <tr ng-repeat="app in vm.apps">
+                  <td>{{app.name}}</td>
+                  <td>&nbsp;</td>
+                  <td>Has read access to your Contact Details</td>
+                  <td>&nbsp;</td>
+                  <td><button type="button" class="btn btn-danger pull-left" ng-click="vm.revokeAppAccess(app.id)">Revoke Access</button></td>
+              </tr>
+          </table>
+      </div>
+    </div>
+</div>
+</div>
