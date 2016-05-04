@@ -12,7 +12,7 @@ from iupds import settings
 import simplejson
 
 from iupdsmanager.views import is_logged_in, get_user_email
-from iupdsmanager.models import Application, Profile, AccessToken
+from iupdsmanager.models import Application, Profile, AccessToken, Grant
 
 
 @api_view(['GET'])
@@ -26,7 +26,8 @@ def application_list(request):
             if is_logged_in():
 
                 user_profile = Profile.objects.filter(email=get_user_email())
-                applications = Application.objects.get(user=user_profile).values()
+                apps = Grant.objects.filter(user=user_profile).values_list('application__pk', flat=True)
+                applications = Application.objects.filter(pk__in=apps).values()
 
                 return Response({'user_applications': applications})
             else:
