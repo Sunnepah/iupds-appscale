@@ -7,12 +7,6 @@ from appscale_user_client import AppscaleUserClient
 
 import time
 
-
-def unicode_csv_reader(utf8_data, dialect=csv.excel, **kwargs):
-    csv_reader = csv.reader(utf8_data, dialect=dialect, **kwargs)
-    for row in csv_reader:
-        yield [unicode(cell, 'utf-8') for cell in row]
-
 start_time = time.time()
 
 user_client = AppscaleUserClient()
@@ -31,19 +25,17 @@ mydb = MySQLdb.connect(host='localhost',
                        db='iupds_db')
 cursor = mydb.cursor()
 
-# csv_data = csv.reader(open(file_path, 'r'), delimiter=';')
-csv_data = unicode_csv_reader(open(file_path))
+csv_data = csv.reader(open(file_path, 'r'), delimiter=';')
 
 for row in csv_data:
     print row
-    exit(1)
     logging.debug(row)
 
     # data in row:
     # ['user_id', 'name', 'username', 'email','pwd', 'user_type', '0', '0', '18','created_at', 'last_login', '', '\n']
 
     user_id_old = str(row[0])
-    fullname = str(row[1])
+    fullname = str(row[1]).upper().decode('utf-8').upper().encode('utf-8')
     username = str(row[2])
     email = str(row[3])
     created_at = str(row[9])
