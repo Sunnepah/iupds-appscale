@@ -578,26 +578,26 @@ def set_user_permission_on_personal_graph(graph, username):
 
 def get_email_graph_uri():
     user = get_user_data()
-    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/emails'
-    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/emails'
+    print settings.GRAPH_ROOT + '/' + get_user_id() + '/emails'
+    return settings.GRAPH_ROOT + '/' + get_user_id() + '/emails'
 
 
 def get_telephone_graph_uri():
     user = get_user_data()
-    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/telephones'
-    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/telephones'
+    print settings.GRAPH_ROOT + '/' + get_user_id() + '/telephones'
+    return settings.GRAPH_ROOT + '/' + get_user_id() + '/telephones'
 
 
 def get_address_graph_uri():
     user = get_user_data()
-    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/addresses'
-    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/addresses'
+    print settings.GRAPH_ROOT + '/' + get_user_id() + '/addresses'
+    return settings.GRAPH_ROOT + '/' + get_user_id() + '/addresses'
 
 
 def get_person_graph_uri():
     user = get_user_data()
-    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/persons'
-    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/persons'
+    print settings.GRAPH_ROOT + '/' + get_user_id() + '/persons'
+    return settings.GRAPH_ROOT + '/' + get_user_id() + '/persons'
 
 
 def remote_command(command):
