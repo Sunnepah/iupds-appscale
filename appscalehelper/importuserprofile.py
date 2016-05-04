@@ -58,7 +58,7 @@ for row in csv_data:
 
             # call uaserver to create user
             response = user_client.create_user(email, os.urandom(7))
-            print "Credentials "+str(email) + " -> " + str(os.urandom(7)) + "\n"
+            
             if response:
                 user_data = user_client.get_user_data(email)
 

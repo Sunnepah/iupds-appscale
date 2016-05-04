@@ -121,7 +121,6 @@ class AppscaleUserClient:
         while 1:
             try:
                 result = self.server.get_user_data(username, self.secret)
-                print result
                 return result
             except Exception, exception:
                 print ("Exception when retrieving user: {0}".format(exception))
@@ -205,6 +204,7 @@ class AppscaleUserClient:
         result = self.server.change_password(username, password, self.secret)
         if result != 'true':
             raise Exception(result)
+        return True
 
     def is_user_enabled(self, user, secret):
         return self.server.is_user_enabled(user, secret)
