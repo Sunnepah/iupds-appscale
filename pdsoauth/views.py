@@ -28,8 +28,6 @@ def application_list(request):
                 user_profile = Profile.objects.filter(email=get_user_email())
                 applications = Application.objects.get(user=user_profile).values()
 
-                print applications
-
                 return Response({'user_applications': applications})
             else:
                 users.create_login_url('/')
@@ -84,24 +82,3 @@ def revoke_application(request, pk):
 
     except Application.DoesNotExist or Profile.DoesNotExist or AccessToken.DoesNotExist:
         return Response({'status': False, 'message': 'Not Found'}, status=status.HTTP_404_NOT_FOUND)
-
-# @api_view(['GET', 'POST'])
-# def snippet_list(request):
-#     """
-#     List all snippets, or create a new snippet.
-#     """
-#     if request.method == 'GET':
-#         snippets = Snippet.objects.all()
-#         serializer = SnippetSerializer(snippets, many=True)
-#         return Response(serializer.data)
-#
-#     elif request.method == 'POST':
-#         serializer = SnippetSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# url=settings.TYK_INVALIDATE_REFRESH_TOKEN + "/"
-#  + settings.TOKEN_DELETE + "?api_id=" + settings.PDS_API_ID,
-# api_id={api_id}
