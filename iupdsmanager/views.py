@@ -583,19 +583,16 @@ def get_email_graph_uri():
 
 
 def get_telephone_graph_uri():
-    user = get_user_data()
     print settings.GRAPH_ROOT + '/' + get_user_id() + '/telephones'
     return settings.GRAPH_ROOT + '/' + get_user_id() + '/telephones'
 
 
 def get_address_graph_uri():
-    user = get_user_data()
     print settings.GRAPH_ROOT + '/' + get_user_id() + '/addresses'
     return settings.GRAPH_ROOT + '/' + get_user_id() + '/addresses'
 
 
 def get_person_graph_uri():
-    user = get_user_data()
     print settings.GRAPH_ROOT + '/' + get_user_id() + '/persons'
     return settings.GRAPH_ROOT + '/' + get_user_id() + '/persons'
 
