@@ -122,8 +122,7 @@ def index(request):
 
 def get_profile():
     try:
-        user = get_user_data()
-        user_profile = Profile.objects.get(email=user['email'])
+        user_profile = Profile.objects.get(email=get_user_email())
         return user_profile
     except:
         return False
@@ -440,11 +439,13 @@ def create_graph(graph):
 
 
 def get_user_id():
+    user_profile = Profile.objects.get(email=get_user_email())
+    return str(user_profile.id)
+
+
+def get_user_email():
     user = get_user_data()
-    # create virtuoso user
-    # nickname_ = slugify(unicode(user['nickname']))
-    user_id = str(user['user_id'])
-    return user_id
+    return str(user['email'])
 
 
 def insert_graph(rdf_triples, graph):
@@ -647,7 +648,7 @@ def oauth_authorize(request):
                 token = BearerToken()
                 grant = AuthorizationCodeGrantPds()
 
-                userprofile = Profile.objects.get(appscale_user_id=get_user_id())
+                userprofile = Profile.objects.get(email=get_user_email())
                 request_ = {'client_id': request.POST.get('client_id'),
                             'redirect_uri': request.POST.get('redirect_uri'),
                             'response_type': request.POST.get('response_type', None),
@@ -714,8 +715,8 @@ def oauth_login(request):
                     grant = AuthorizationCodeGrantPds()
 
                     print "User ID"
-                    print get_user_id()
-                    user_profile = Profile.objects.get(appscale_user_id=get_user_id())
+                    print get_user_email()
+                    user_profile = Profile.objects.get(email=get_user_email())
 
                     client_id = str(request.GET.get('client_id'))
                     application = Application.objects.get(client_id=client_id)
@@ -760,8 +761,6 @@ def oauth_tyk_notify(request):
             notification_type = received_json_data['notification_type']
 
             grant = Grant.objects.get(code=auth_code)
-            # application = Application.objects.get(pk=grant.application)
-            # user_profile = Profile.objects.get(pk=grant.user)
 
             print "Saving access_token"
 
@@ -781,14 +780,6 @@ def oauth_tyk_notify(request):
                 'refresh_token': "",
                 'grant_type': 'authorization_code'
             }
-
-            # {
-            #     "access_token": "101f6bdb7f05f4dd5579e1ee5f1d46952",
-            #     "expires_in": 3600,
-            #     "refresh_token": "ODhiMGQ5M2EtYjAxOC00OTc4LTUzMTgtZjBhZTQ4ZTEzNWVh",
-            #     "scope": "read",
-            #     "token_type": "bearer"
-            # }
 
             pds_auth = AuthorizationCodeGrantPds()
             pds_auth.save_bearer_token(token, get_object(request_))
@@ -820,8 +811,8 @@ class ApplicationOwnerIsUserMixin():
     fields = '__all__'
 
     def get_queryset(self):
-        print get_user_id()
-        profile = Profile.objects.get(appscale_user_id=get_user_id())
+        print get_user_email()
+        profile = Profile.objects.get(email=get_user_email())
 
         return Application.objects.filter(user_id=profile.id)
 
