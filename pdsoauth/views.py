@@ -11,7 +11,7 @@ from google.appengine.api import urlfetch
 from iupds import settings
 import simplejson
 
-from iupdsmanager.views import is_logged_in, get_user_id
+from iupdsmanager.views import is_logged_in, get_user_email
 from iupdsmanager.models import Application, Profile, AccessToken
 
 
@@ -25,8 +25,8 @@ def application_list(request):
         if request.method == 'GET':
             if is_logged_in():
 
-                user_profile = Profile.objects.get(appscale_user_id=get_user_id())
-                applications = Application.objects.filter(user=user_profile).values()
+                user_profile = Profile.objects.filter(email=get_user_email())
+                applications = Application.objects.get(user=user_profile).values()
 
                 print applications
 
