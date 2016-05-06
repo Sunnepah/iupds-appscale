@@ -96,10 +96,22 @@
             }).error(function(error){
                 console.log(error);
             });
-
         }
 
         function createGraphs() {
+
+            $http({
+                url: "/api/v1/graph/user/",
+                dataType: "json",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).success(function(response){
+                console.log(response);
+            }).error(function(error){
+                console.log(error);
+            });
 
             $http({
                 url: "/api/v1/create_graphs/",

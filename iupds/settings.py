@@ -46,29 +46,28 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = (
-    # 'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'polls',
     'django_extensions',
-    'iupdsmanager',
+    # 'oauth2_provider',
+    # 'corsheaders',
     'rest_framework',
-    # 'compressor',
-    'tastypie',
-    'jobs',
+    'iupdsmanager',
     'authentication',
-    'posts',
-
+    'corsheaders',
+    # 'pdsoauth2',
+    'pdsoauth',
 )
 
 MIDDLEWARE_CLASSES = (
     'google.appengine.ext.ndb.django_middleware.NdbDjangoMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
@@ -162,10 +161,14 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
     ),
-    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     # 'DEFAULT_PERMISSION_CLASSES': (
     #    'rest_framework.permissions.AllowAny',
     # ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
 }
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
@@ -196,19 +199,160 @@ else:
 
 APPSC_KEY = 'app_secret'
 
-AUTH_USER_MODEL = 'authentication.Account'
-
 
 # VIRTUOSO SETTINGS
-SPARQL_ENDPOINT = "http://33.33.33.13:8890/sparql"
-SPARQL_AUTH_ENDPOINT = "http://33.33.33.13:8890/sparql-auth"
+SPARQL_ENDPOINT = "http://192.168.33.18:8890/sparql"
+SPARQL_AUTH_ENDPOINT = "http://192.168.33.18:8890/sparql-auth"
 
-VIRTUOSO_HOST = "33.33.33.13"
+VIRTUOSO_HOST = "192.168.33.18"
 VIRTUOSO_PORT = "8890"
 VIRTUOSO_USER = "dba"
 VIRTUOSO_PASSW = "dba"
 
-GRAPH_USER = '185804764220139124118'
-GRAPH_USER_PW = '1234567'
 
-GRAPH_ROOT = 'http://inforegister.ee'
+GRAPH_ROOT = 'http://inforegister.ee/users'
+
+REMOTE_COMMAND_HOST = 'http://192.168.33.19:9000/api/v1/commands/'
+
+GRAPH_USER_PW = 'secret'
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = ()
+CORS_ORIGIN_REGEX_WHITELIST = ()
+CORS_URLS_REGEX = '^.*$'  # r'^/api/.*$'
+
+CORS_ALLOW_METHODS = (
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS'
+)
+
+CORS_ALLOW_HEADERS = (
+    'x-requested-with',
+    'content-type',
+    'accept',
+    'origin',
+    'authorization',
+    'x-csrftoken'
+)
+
+CORS_EXPOSE_HEADERS = ()
+
+CORS_PREFLIGHT_MAX_AGE = 86400
+
+CORS_ALLOW_CREDENTIALS = False
+
+CORS_REPLACE_HTTPS_REFERER = False
+
+# AUTHENTICATION_BACKENDS = (
+#    'rest_framework_social_oauth2.backends.DjangoOAuth2',
+#    'django.contrib.auth.backends.ModelBackend',
+# )
+
+
+AUTHORIZATION_CODE_EXPIRE_SECONDS = 60
+ACCESS_TOKEN_EXPIRE_SECONDS = 36000
+REFRESH_TOKEN_EXPIRE_SECONDS = None
+ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
+
+CLIENT_ID_GENERATOR_CLASS = 'oauth2_provider.generators.ClientIdGenerator'
+CLIENT_SECRET_GENERATOR_CLASS = 'oauth2_provider.generators.ClientSecretGenerator'
+CLIENT_SECRET_GENERATOR_LENGTH = 128
+OAUTH2_SERVER_CLASS = 'oauthlib.oauth2.Server'
+OAUTH2_VALIDATOR_CLASS = 'iupdsmanager.oauth2_validators.OAuth2Validator'
+OAUTH2_BACKEND_CLASS = 'iupdsmanager.oauth2_backends.OAuthLibCore'
+SCOPES = {"read": "Reading scope"}
+DEFAULT_SCOPES = ['__all__']
+READ_SCOPE = 'read'
+WRITE_SCOPE = 'write'
+
+REQUEST_APPROVAL_PROMPT = 'force'
+
+# Special settings that will be evaluated at runtime
+_SCOPES = []
+_DEFAULT_SCOPES = []
+
+# A sample logging configuration. The only tangible logging
+# performed by this configuration is to send an email to
+# the site admins on every HTTP 500 error when DEBUG=False.
+# See http://docs.djangoproject.com/en/dev/topics/logging for
+# more details on how to customize your logging configuration.
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'filters': {
+#         'require_debug_false': {
+#             '()': 'django.utils.log.RequireDebugFalse'
+#         }
+#     },
+#     'handlers': {
+#         'mail_admins': {
+#             'level': 'ERROR',
+#             'filters': ['require_debug_false'],
+#             'class': 'django.utils.log.AdminEmailHandler'
+#         },
+#         'applogfile': {
+#             'level': 'DEBUG',
+#             'class': 'logging.handlers.RotatingFileHandler',
+#             'filename': os.path.join(BASE_DIR, 'iupds.log'),
+#             'maxBytes': 1024 * 1024 * 15,  # 15MB
+#             'backupCount': 10,
+#         },
+#     },
+#     'loggers': {
+#         'django.request': {
+#             'handlers': ['mail_admins'],
+#             'level': 'ERROR',
+#             'propagate': True,
+#         },
+#     }
+# }
+
+# TYK ENDPOINTS
+
+TYK_DASHBOARD_API_CREDENTIAL = 'eefef3f1987544244d7d64f42021ef63'
+TYK_API_ORG_ID = "5710f36356c02c0c17000001"
+TYK_API_POLICY_ID = "5711f41656c02c0c17000003"
+
+TYK_GATEWAY_LISTEN_PORT = '8080'
+TYK_GATEWAY_HOST = 'http://my-tyk-instance.dev'
+TYK_GATEWAY = 'http://my-tyk-instance.dev:8080'
+TYK_OAUTH_AUTHORIZE_ENDPOINT = TYK_GATEWAY + '/tyk/oauth/authorize-client/'
+# POST http://localhost:5000/listen_path/tyk/oauth/authorize-client/
+
+# If the user accepts the Client access and has authenticated successfully,
+# your app calls the Tyk REST API OAuth Authorization endpoint (/tyk/oauth/authorize-client/) with the POST parameters
+
+PDS_API_KEY = '5710f36356c02c0c1700000157cd1db95c0a45a6569c917ffd959dae'
+PDS_API_ID = 'f56fbc1dd94f46bb55b2a279f9c8f5e6'
+PDS_API_NAME = 'PDS API v1'
+
+# https://tyk.io/docs/tyk-api-gateway-v1-9/tyk-rest-api/
+# x-tyk-authorization: 352d20ee67be67f6340b4c0605b044b7
+# Authorization Endpoints below use this authorization secret
+TYK_AUTHORIZATION_NODE_SECRET = '352d20ee67be67f6340b4c0605b044b7'
+# Generates a new key, with the access token generated by Tyk
+TYK_CREATE_KEY_ENDPOINT = TYK_GATEWAY + '/tyk/keys/create'
+# Retrieve, add, update, or delete keys
+TYK_KEYS_ENDPOINT = TYK_GATEWAY + '/tyk/keys/'
+# Create a new OAuth Client ID
+TYK_CREATE_CLIENT_ENDPOINT = TYK_GATEWAY + '/tyk/oauth/clients/create'
+# Retrieve or delete OAuth Clients
+TYK_CLIENTS_ENDPOINT = TYK_GATEWAY + '/tyk/oauth/clients/'
+# Hot reload API Definitions and reload all muxers
+TYK_RELOAD_ENDPOINT = TYK_GATEWAY + '/tyk/reload/'
+# Health-check: get a snapshot of your API and tyk node performance
+TYK_HEALTH_ENDPOINT = TYK_GATEWAY + '/tyk/health/'
+
+# Invalidate Refresh Token DELETE
+TYK_INVALIDATE_REFRESH_TOKEN = TYK_GATEWAY + '/tyk/oauth/refresh'
+
+TYK_DELETE_ACCESS_TOKEN = TYK_GATEWAY + '/tyk/keys/'
+
+APPSCALE_APP_URL = 'http://192.168.33.10:8080'
+# APPSCALE_APP_URL = 'http://localhost:9805'
+
+TOKEN_DELETE = "5710f36356c02c0c170000019d28b66939a2453870dc257f3e808861"

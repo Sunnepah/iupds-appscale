@@ -3,43 +3,71 @@
         <ul class="nav" id="side-menu">
 
             <li class="active">
-                <a href="/dashboard"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
+                <a href="/#/dashboard"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
             </li>
             <li class="active">
-                <a href="/profile"><i class="fa fa-dashboard fa-fw"></i> Profile</a>
+                <a href="/#/profile"><i class="fa fa-dashboard fa-fw"></i> Profile</a>
             </li>
             <li>
-                <a href="/profile/settings"><i class="fa fa-dashboard fa-fw"></i> Profile Setting</a>
+                <a href="/#/profile/settings"><i class="fa fa-dashboard fa-fw"></i> Profile Setting</a>
             </li>
             <li>
-                <a href="/contact"><i class="fa fa-fw fa-sign-out"></i> Manage Contacts</a>
-            </li>
-            <li>
-                <a href="/social"><i class="fa fa-fw fa-sign-out"></i> Manage Social Media</a>
-            </li>
-            <li>
-                <a href="/app"><i class="fa fa-fw fa-sign-out"></i> Manage Apps Tokens</a>
-            </li>
-            <li>
-               <a href="/graphs"><i class="fa fa-fw fa-sign-out"></i> Manage Personal Graphs</a>
+               <a href="#"><i class="fa fa-fw fa-gears"></i> Graphs<span class="fa arrow"></span></a>
+               <ul class="nav nav-second-level">
+                   <li>
+                      <a href="/#/graphs/accounts"><i class="fa fa-fw fa-users"></i>Accounts</a>
+                   </li>
+                   <li>
+                       <a href="/#/contact/details"><i class="fa fa-fw fa-users"></i>Personal</a>
+                   </li>
+                   <li>
+                      <a href="/#/contact/details"><i class="fa fa-fw fa-users"></i>Emails</a>
+                   </li>
+                   <li>
+                     <a href="/#/contact/details"><i class="fa fa-fw fa-users"></i>Telephones</a>
+                    </li>
+                   <li>
+                      <a href="/#/contact/details"><i class="fa fa-fw fa-users"></i>Addresses</a>
+                   </li>
+                   <li>
+                       <a href="/#/graphs/facebook"><i class="fa fa-fw fa-users"></i>Facebook</a>
+                   </li>
+                   <li>
+                       <a href="/#/graphs/twitter"><i class="fa fa-fw fa-users"></i>Twitter</a>
+                   </li>
+                   <li>
+                      <a href="/#/graphs/linkedln"><i class="fa fa-fw fa-users"></i>Linkedln</a>
+                   </li>
+                   <li>
+                      <a href="/#/graphs/public-contracts"><i class="fa fa-fw fa-users"></i>Contracts</a>
+                   </li>
+                   <li>
+                        <a href="/#/graphs/monitoring-organizations"><i class="fa fa-fw fa-users"></i>Monitoring Organizations</a>
+                   </li>
+               </ul>
+               <!-- /.nav-second-level -->
            </li>
             <li>
-                <a href="#"><i class="fa fa-fw fa-gears"></i> System<span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level">
+               <a href="#"><i class="fa fa-fw fa-gears"></i> Data Category<span class="fa arrow"></span></a>
+               <ul class="nav nav-second-level">
                     <li>
-                        <a href="/"><i class="fa fa-fw fa-users"></i>Credentials</a>
+                       <a href="/#/contact"><i class="fa fa-fw fa-users"></i>Contacts</a>
                     </li>
-                    <li>
-                        <a href="/audit"><i class="fa fa-fw fa-file-text-o"></i>Audit Trails</a>
-                    </li>
-                </ul>
-                <!-- /.nav-second-level -->
+               </ul>
+               <!-- /.nav-second-level -->
+           </li>
+            <li>
+                <a href="/#/apps"><i class="fa fa-fw fa-sign-out"></i> Manage Apps Tokens</a>
             </li>
+            <li>
+               <a href="/#/graphs"><i class="fa fa-fw fa-sign-out"></i> Setup Data Store</a>
+           </li>
+
             <li ng-controller="NavbarController as vm">
                <a href="javascript:void(0)" ng-click="vm.logout()"><i class="fa fa-fw fa-sign-out"></i> Logout</a>
             </li>
 
-            <li ng-controller="DashboardController as vm"><a href="javascript:void(0)" ng-click="vm.register()"><i class="fa fa-sign-out fa-fw"></i> Register</a></li>
+            <!--<li ng-controller="DashboardController as vm"><a href="javascript:void(0)" ng-click="vm.register()"><i class="fa fa-sign-out fa-fw"></i> Register</a></li>-->
 
         </ul>
     </div>

@@ -14,52 +14,33 @@
 
 from django.conf.urls import include, url
 from django.contrib import admin
-from tastypie.api import Api
-from jobs.api import JobResource
+from django.views.decorators.csrf import csrf_exempt
 
-# from polls.views import index as pollIndex
 from iupdsmanager.views import index, profile, create_user, logout,\
-    create_contact, contact_details, my_contacts, create_graphs, drop_graphs
-# from iupds.views import IndexView
+    create_contact, contact_details, my_contacts, create_graphs,\
+    drop_graphs, create_graph_user, oauth_authorize, oauth_login, oauth_tyk_notify
 
-from rest_framework_nested import routers
-
-from authentication.views import AccountViewSet, LoginView
-from posts.views import AccountPostsViewSet, PostViewSet
-
-# account rest_framework API
-router = routers.SimpleRouter()
-router.register(r'accounts', AccountViewSet)
-
-router.register(r'posts', PostViewSet)
-accounts_router = routers.NestedSimpleRouter(
-    router, r'accounts', lookup='account'
-)
-accounts_router.register(r'posts', AccountPostsViewSet)
-
-# JOB tastypie API
-v1_api = Api(api_name='v1')
-v1_api.register(JobResource())
-
+from pdsoauth.views import application_list, revoke_application
 
 urlpatterns = [
+    url(r'^admin/', include(admin.site.urls)),
     url(r'^$', index),
-    url(r'^polls/', include('polls.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^iupdsmanager/', include('iupdsmanager.urls')),
-    url(r'^api/', include(v1_api.urls)),
-    # url(r'^job/', include('jobs.urls')),
-    url(r'^api/v1/', include(router.urls)),
-    url(r'^api/v1/', include(accounts_router.urls)),
     # url('^.*$', IndexView.as_view(), name='index'),
-    url(r'^api/v1/auth/login/$', LoginView.as_view(), name='login'),
-    # url(r'^api/v1/auth/logout/$', LogoutView.as_view(), name='logout'),
     url(r'^api/v1/profile/$', profile, name='profile'),
     url(r'^api/v1/contact/$', create_contact, name='create_contact'),
     url(r'^api/v1/contact/details$', contact_details, name='contact_details'),
-    url(r'^api/v1/mycontacts/$', my_contacts, name='mycontacts'),
+    url(r'^api/v1/mycontacts/$', my_contacts, name='my_contacts'),
     url(r'^api/v1/create_user/$', create_user, name='create_user'),
+    url(r'^api/v1/graph/user/$', create_graph_user, name='create_graph_user'),
     url(r'^api/v1/drop_graphs/$', drop_graphs, name='drop_graphs'),
     url(r'^api/v1/create_graphs/$', create_graphs, name='create_graphs'),
-    url(r'^api/v1/auth/logout/$', logout, name='logout')
+    url(r'^api/v1/auth/logout/$', logout, name='logout'),
+    url(r'^oauth/authorize/$', oauth_authorize, name='oauth_authorize'),
+    url(r'^o/', include('iupdsmanager.urls', namespace='oauth2_provider')),
+    url(r'^oauth/login/$', oauth_login, name='oauth_login'),
+    url(r'^oauth/tyk/notify/$', csrf_exempt(oauth_tyk_notify), name='oauth_tyk_notify'),
+    url(r'^api/v1/users/applications/$', application_list, name='user-applications'),
+    url(r'^api/v1/users/applications/(?P<pk>[0-9])/$', revoke_application, name='revoke-applications')
 ]

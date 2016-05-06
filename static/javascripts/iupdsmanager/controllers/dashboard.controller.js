@@ -34,10 +34,6 @@
             vm.user = Authentication.getAuthenticatedAccount()
         }
 
-        // console.log(vm.user);
-        //vm.data = Dashboard.getGraphCount();
-        //console.log(vm.data);
-        //vm.data = [];
         $http.get('/api/v1/profile/')
           .then(function(result) {
             vm.data = result.data;

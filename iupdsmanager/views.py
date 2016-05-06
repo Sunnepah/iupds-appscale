@@ -1,66 +1,69 @@
 # coding=utf-8
 from google.appengine.api import users
 from google.appengine.api.users import UserNotFoundError
+import urllib
+import urllib2
+from google.appengine.api import urlfetch
 
-# from django.core import serializers
-# from django.http import HttpResponse
-from .models import Profile, Contact, Address
-from django.shortcuts import render
+import simplejson
+import json
+
+from .models import Profile, Contact, Address, Application, Grant, AccessToken, RefreshToken
+from django.shortcuts import render, redirect
+from django.core.urlresolvers import reverse_lazy
+from django.http import HttpResponse
 from iupds import settings
 
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, renderer_classes,parser_classes
 from rest_framework.response import Response
 
-from sparqlwrapper.SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, SPARQLWrapper2, SPARQLExceptions
-from rdflib import Graph
+from sparqlwrapper.SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF, TURTLE, SPARQLWrapper2, SPARQLExceptions
+# from rdflib import Graph
 import re
-from virtuoso.virtuoso.isqlwrapper import ISQLWrapper
 
-# import pprint
+from rest_framework.exceptions import APIException
+import logging
+
+from django.forms.models import modelform_factory
+from django.views.generic import CreateView, ListView, DetailView, DeleteView, UpdateView
+
+# ouath2
+from oauthlib.oauth2 import BearerToken
+from iupdsmanager.authorization_code import AuthorizationCodeGrantPds
+
 # APPSCALE RELATED IMPORT
 # import cgi
-from appscalehelper.appscale_user_client import AppscaleUserClient
+# from appscalehelper.appscale_user_client import AppscaleUserClient
 
-uaserver = AppscaleUserClient()
+# uaserver = AppscaleUserClient()
 
 SPARQL_ENDPOINT = settings.SPARQL_ENDPOINT
 SPARQL_AUTH_ENDPOINT = settings.SPARQL_AUTH_ENDPOINT
-isql = ISQLWrapper(settings.VIRTUOSO_HOST, settings.VIRTUOSO_USER, settings.VIRTUOSO_PASSW)
+
+log = logging.getLogger('oauth2_provider')
+logging.basicConfig(level=logging.DEBUG)
+# log = logging.getLogger(__name__)
+
+
+class ServiceUnavailable(APIException):
+    status_code = 503
+    default_detail = 'Service temporarily unavailable, try again later.'
 
 
 @api_view(['GET'])
 def profile(request):
-    # result = isql.execute_cmd("SPARQL CLEAR GRAPH <%s>" % 'http://mygraph.com')
-    # print result
-    # exit(1)
     if request.method == 'GET':
         if is_logged_in():
             user = get_user_data()
-            # app_user = uaserver.get_user_data('admin@gmail.com')#user['email'])
-            # print type(app_user)
-            # create virtuoso user
-            graph_username = user['nickname'] + '-' + str(user['user_id'])
-            # create_graph_user(graph_username, '12345678')
-            # user_profile = Profile(email=user['email'], username=user['email'], uid=user['user_id'],
-            #                        user_id_old=user['user_id'], full_name='test user')
-            # user_profile.save()
 
-            total_telephone_graph = len(query_graph(get_telephone_graph_uri()))
-            total_email_graph = len(query_graph(get_email_graph_uri()))
-            total_addresses_graph = len(query_graph(get_address_graph_uri()))
-            total_persons_graph = len(query_graph(get_person_graph_uri()))
-
-            total_contact_graph = total_telephone_graph + total_email_graph + total_addresses_graph + total_persons_graph
+            total_contact_graph = get_total_user_graph()
 
             return Response({"user": user, "contact_graph": total_contact_graph}, status=status.HTTP_200_OK)
         else:
             users.create_login_url('/')
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'Account could not be created with received data.'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status': False, 'message': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['POST'])
@@ -69,10 +72,7 @@ def logout(request):
         logout_url = users.create_logout_url("/", _auth_domain=None)
         return Response({'logout_url': logout_url}, status=status.HTTP_200_OK)
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'The user is not logged in'
-        }, status=status.HTTP_410_GONE)
+        return Response({'status': 'Bad request', 'message': 'The user is not logged in'}, status=status.HTTP_410_GONE)
 
 
 @api_view(['POST'])
@@ -99,10 +99,8 @@ def create_user(request):
     #         else:
     #             return Response({'response': result}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'Account could not be created with received data.'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status': 'Bad request', 'message': 'Account could not be created with received data.'},
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 def index(request):
@@ -123,9 +121,11 @@ def index(request):
 
 
 def get_profile():
-    user = get_user_data()
-    user_profile = Profile.objects.get(email=user['email'])
-    return user_profile
+    try:
+        user_profile = Profile.objects.get(email=get_user_email())
+        return user_profile
+    except:
+        return False
 
 
 @api_view(['POST'])
@@ -149,19 +149,15 @@ def create_contact(request):
             if rdf:
                 return Response({'rdf': rdf}, status=status.HTTP_200_OK)
             else:
-                return Response({
-                    'status': 'Can not save data',
-                    'message': 'Error saving to personal store'
-                }, status=status.HTTP_304_NOT_MODIFIED)
+                return Response({'status': 'Can not save data', 'message': 'Error saving to personal store'},
+                                status=status.HTTP_304_NOT_MODIFIED)
 
-            # user = get_user_data()
+                # user = get_user_data()
 
         # return Response({"response": request.data['email']}, status=status.HTTP_200_OK)
         else:
-            return Response({
-                'status': 'Unauthorized',
-                'message': 'User not logged in'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'status': 'Unauthorized', 'message': 'User not logged in'},
+                            status=status.HTTP_401_UNAUTHORIZED)
     except UserNotFoundError:
         return None
 
@@ -170,18 +166,16 @@ def create_contact(request):
 def contact_details(request):
     try:
         if is_logged_in():
-            email = get_bindings(get_email_graph_uri())
-            telephone = get_bindings(get_telephone_graph_uri())
-            address = get_bindings(get_address_graph_uri())
+            email = query_graph(get_email_graph_uri())
+            telephone = query_graph(get_telephone_graph_uri())
+            address = query_graph(get_address_graph_uri())
             person = query_graph(get_person_graph_uri())
 
             return Response({'email': email, 'telephone': telephone, 'address': address, 'person': person},
                             status=status.HTTP_200_OK)
         else:
-            return Response({
-                'status': 'Unauthorized',
-                'message': 'User not logged in'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'status': 'Unauthorized', 'message': 'User not logged in'},
+                            status=status.HTTP_401_UNAUTHORIZED)
     except UserNotFoundError:
         return Response({'response': 'No content'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -202,10 +196,8 @@ def my_contacts(request):
             return Response({'email': email, 'telephone': telephone, 'address': address, 'person': person},
                             status=status.HTTP_200_OK)
         else:
-            return Response({
-                'status': 'Unauthorized',
-                'message': 'User not logged in'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'status': 'Unauthorized', 'message': 'User not logged in'},
+                            status=status.HTTP_401_UNAUTHORIZED)
     except UserNotFoundError:
         return Response({'response': 'No content'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -219,20 +211,13 @@ def create_graphs(request):
             create_graph(get_telephone_graph_uri())
             create_graph(get_address_graph_uri())
 
-            return Response({
-                'status': 'Graphs created!'
-            }, status=status.HTTP_200_OK)
+            return Response({'status': 'Graphs created!'}, status=status.HTTP_200_OK)
         except Exception as e:
             print e
-            return Response({
-                'status': 'Server error',
-                'message': 'Not successful'
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response({'status': 'Server error', 'message': 'Not successful'}, status=status.HTTP_404_NOT_FOUND)
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'Graph creation was not successful'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status': 'Bad request', 'message': 'Graph creation was not successful'},
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['DELETE'])
@@ -247,15 +232,23 @@ def drop_graphs(request):
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
             print e
-            return Response({
-                'status': 'Server error',
-                'message': 'Not successful'
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response({'status': 'Server error', 'message': 'Not successful'}, status=status.HTTP_404_NOT_FOUND)
     else:
-        return Response({
-            'status': 'Bad request',
-            'message': 'Not successful'
-        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response({'status': 'Bad request', 'message': 'Not successful'},
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(['POST'])
+def create_graph_user(request):
+    try:
+        username = get_user_id()
+        create_sql_graph_user(username)
+
+        return Response({'status': 'User created!'}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        print e
+        return Response({'status': 'Server error', 'message': 'Not successful'}, status=status.HTTP_404_NOT_FOUND)
 
 
 def is_logged_in():
@@ -313,8 +306,7 @@ def _build_address(data, user_profile):
     else:
         street = data["street1"]
     return Address(street=street, city=data["city"], post_code=data["post_code"], profile_id=user_profile.id,
-                   primary=True,
-                   country=data["country"])
+                   primary=True, country=data["country"])
 
 
 def generate_contact_rdf(data):
@@ -333,7 +325,7 @@ def generate_contact_rdf(data):
         email = data['email']
 
         # uid = get_profile().uid
-        user_account_identifier = get_person_graph_uri()    # + str(uid)
+        user_account_identifier = get_person_graph_uri()  # + str(uid)
 
         rdf_persons += create_triple(user_account_identifier, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                      "http://www.w3.org/2006/vcard/ns#Individual")
@@ -377,8 +369,8 @@ def generate_contact_rdf(data):
         formatted_email = re.sub('[^0-9a-zA-Z]+', '-', str(email).lower())
         rdf_emails += create_triple(user_account_identifier, "http://www.w3.org/2006/vcard/ns#hasEmail",
                                     get_email_graph_uri() + "/" + formatted_email)
-        rdf_emails += create_triple(get_email_graph_uri() + "/" + formatted_email, "http://www.w3.org/2006/vcard/ns#hasValue",
-                                    "mailto:" + email)
+        rdf_emails += create_triple(get_email_graph_uri() + "/" + formatted_email,
+                                    "http://www.w3.org/2006/vcard/ns#hasValue", "mailto:" + email)
         rdf_emails += create_triple(get_email_graph_uri() + "/" + formatted_email,
                                     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                     "http://www.w3.org/2006/vcard/ns#Work")
@@ -430,82 +422,109 @@ def create_triple(subject, predicate, object_, type_=""):
 
 
 def create_graph(graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    try:
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
+        sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
 
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
+        print results
 
-    print results
+        return results
+    except Exception as e:
+        print e.message
+        return list()
 
-    return results
+
+def get_user_id():
+    user_profile = Profile.objects.get(email=get_user_email())
+    return str(user_profile.id)
+
+
+def get_user_email():
+    user = get_user_data()
+    return str(user['email'])
 
 
 def insert_graph(rdf_triples, graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    try:
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    query = """ INSERT IN GRAPH <""" + graph + """> { """ + rdf_triples + """ }"""
-    print query
-    sparql.setQuery(query)
+        query = """ INSERT IN GRAPH <""" + graph + """> { """ + rdf_triples + """ }"""
+        print query
+        sparql.setQuery(query)
 
-    sparql.setReturnFormat(JSON)
-    return sparql.query().convert()
+        sparql.setReturnFormat(JSON)
+        return sparql.query().convert()
+    except Exception as e:
+        print e.message
+        return list()
 
 
 def drop_graph(graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    try:
+        clear_graph(graph)
 
-    sparql.setQuery(""" DROP GRAPH <""" + graph + """>""")
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
+        sparql.setQuery(""" DROP GRAPH <""" + graph + """>""")
 
-    print results
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
 
-    return results
+        print results
+
+        return results
+    except Exception as e:
+        print e.message
+        return list()
 
 
 def clear_graph(graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    try:
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    sparql.setQuery(""" CLEAR GRAPH <""" + graph + """>""")
+        sparql.setQuery(""" CLEAR GRAPH <""" + graph + """>""")
 
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
 
-    return results
+        return results
+    except Exception as e:
+        print e.message
+        return list()
 
 
 def query_graph(graph):
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+    try:
+        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
 
-    query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
+        query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
 
-    sparql.setQuery(query)
+        sparql.setQuery(query)
 
-    # JSON example
-    # print '\n\n*** JSON Example'
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
+        # JSON example
+        # print '\n\n*** JSON Example'
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
 
-    # res = json.dumps(results, separators=(',', ':'))
-    return results['results']['bindings']
-
-
-# for result in results["results"]["bindings"]:
-# print result
+        # res = json.dumps(results, separators=(',', ':'))
+        return results['results']['bindings']
+    except Exception as e:
+        print e.message
+        return list()
 
 
 def get_bindings(graph):
     try:
         sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-        sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
+        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
         query = "SELECT * WHERE { GRAPH <" + graph + "> { ?s ?p ?o . } }"
 
         sparql.setQuery(query)
@@ -529,103 +548,321 @@ def get_bindings(graph):
                     str_triples = "%s: <<None>>" % v
                 # print str_triples.encode('utf-8')
                 rdf += str_triples.encode('utf-8') + '\n'
-            # print
+                # print
         return rdf
     except:
         return False
 
 
-def test_rdf():
-    g = Graph()
-    g.parse("/Users/sunnepah/appscale/apps/ipds-gae-django-skeleton/contactrdf.nt", format="nt")
-    return len(g)
+def create_sql_graph_user(username, password='secret'):
+    remote_command("DB.DBA.USER_CREATE('" + username + "', '" + password + "')")
+    remote_command('GRANT SPARQL_SELECT TO "' + username + '"')
+    remote_command('GRANT SPARQL_UPDATE TO "' + username + '"')
+    remote_command('GRANT SPARQL_SPONGE TO "' + username + '"')
+
+    username = get_user_id()
+    # Set graph permissions on just created user
+    set_user_permission_on_personal_graph(get_person_graph_uri(), username)
+    set_user_permission_on_personal_graph(get_email_graph_uri(), username)
+    set_user_permission_on_personal_graph(get_telephone_graph_uri(), username)
+    set_user_permission_on_personal_graph(get_address_graph_uri(), username)
 
 
-# Sample Non-model Endpoint
-# class ShareView(views.APIView):
-#     permission_classes = []
-#
-#     def post(self, request, *args, **kwargs):
-#         email = request.DATA.get('email', None)
-#         url = request.DATA.get('url', None)
-#         if email and url:
-#             share_url(email, url)
-#             return Response({"success": True})
-#         else:
-#             return Response({"success": False})
-
-
-def create_graph_user(username, password):
-    # 1 Create a new users: testexamplecom185804764220139124118
-    create_user_query = ("DB.DBA.USER_CREATE(%s, " + password + ")") % username
-
-    sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-    sparql.setCredentials(settings.GRAPH_USER, settings.GRAPH_USER_PW)
-
-    sparql.setQuery(create_user_query)
-
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-
-    return results
-
-
-def set_graph_level_security(username, graph):
-    # DB.DBA.USER_CREATE('username', '1234567');
-    # GRANT SPARQL_UPDATE TO "username";
-    # DB.DBA.RDF_DEFAULT_USER_PERMS_SET('username', 0);
-
-    # 2 Grant update
-    grant_user_update = 'GRANT SPARQL_SELECT TO username;'
-    grant_user_update = 'GRANT SPARQL_UPDATE TO username;'
-    grant_user_update = 'GRANT SPARQL_SPONGE TO username;'
-
-    # grant SPARQL_SELECT to "Anna";
-    # grant SPARQL_UPDATE to "Anna";
-    # grant SPARQL_SPONGE to "Anna";
-    # SPARQL SELECT * FROM <settings.GRAPH_ROOT/username> WHERE { ?s ?p ?o }
-
-    # 3 Set basic privileges for each user
-    # In this example, none of the individual users will have global access to graphs:
-    basic_user_privilege = "DB.DBA.RDF_DEFAULT_USER_PERMS_SET (test@example.com-185804764220139124118, 0)"
-
-    # 4 Grant Specific Privileges on Specific Graphs to Specific Users
-    # User can read from (but not write to) her personal system data graph
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + graph + ", test@example.com-185804764220139124118, 1)"
-
-    # 5 Update access(i.e., Write via SPARUL).
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET (" + settings.GRAPH_ROOT + "/username/persons, username, 2)"
-    # DB.DBA.RDF_GRAPH_USER_PERMS_SET ('http://example.com/Anna/private', 'Anna', 3);
-    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET ('settings.GRAPH_ROOT/username/emails', 'username', 3)
-    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/persons', 'username', 3)
-    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/telephones', 'username', 3)
-    #  DB.DBA.RDF_GRAPH_USER_PERMS_SET('settings.GRAPH_ROOT/username/addresses', 'username', 3)
-    # DB.DBA.RDF_GRAPH_USER_PERMS_SET('http://inforegister.ee/185804764220139124118/persons/', '185804764220139124118', 3)
-
-
-    # 6 Sponge access (i.e., Write via "RDF Network Resource Fetch" methods).
-    user_graph_privilege = "DB.DBA.RDF_GRAPH_USER_PERMS_SET ('" + graph + "', 'username', 4)"
+def set_user_permission_on_personal_graph(graph, username):
+    remote_command("DB.DBA.RDF_DEFAULT_USER_PERMS_SET('" + username + "', 0)")
+    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(1) + ")")
+    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(2) + ")")
+    remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(3) + ")")
+    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(4) + ")")
 
 
 def get_email_graph_uri():
     user = get_user_data()
-    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/emails'
-    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/emails'
+    print settings.GRAPH_ROOT + '/' + get_user_id() + '/emails'
+    return settings.GRAPH_ROOT + '/' + get_user_id() + '/emails'
 
 
 def get_telephone_graph_uri():
-    user = get_user_data()
-    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/telephones'
-    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/telephones'
+    print settings.GRAPH_ROOT + '/' + get_user_id() + '/telephones'
+    return settings.GRAPH_ROOT + '/' + get_user_id() + '/telephones'
 
 
 def get_address_graph_uri():
-    user = get_user_data()
-    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/addresses'
-    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/addresses'
+    print settings.GRAPH_ROOT + '/' + get_user_id() + '/addresses'
+    return settings.GRAPH_ROOT + '/' + get_user_id() + '/addresses'
 
 
 def get_person_graph_uri():
-    user = get_user_data()
-    print settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/persons'
-    return settings.GRAPH_ROOT + '/' + str(user['user_id']) + '/persons'
+    print settings.GRAPH_ROOT + '/' + get_user_id() + '/persons'
+    return settings.GRAPH_ROOT + '/' + get_user_id() + '/persons'
+
+
+def remote_command(command):
+    values = {'cmd': command}
+
+    data = urllib.urlencode(values)
+    req = urllib2.Request(settings.REMOTE_COMMAND_HOST, data)
+    response = urllib2.urlopen(req)
+    print response.read()
+    if response.getcode() == 200:
+        return True
+    else:
+        return False
+
+
+def get_total_user_graph():
+    total_telephone_graph = len(query_graph(get_telephone_graph_uri()))
+    total_email_graph = len(query_graph(get_email_graph_uri()))
+    total_addresses_graph = len(query_graph(get_address_graph_uri()))
+    total_persons_graph = len(query_graph(get_person_graph_uri()))
+    total_contact_graph = total_telephone_graph + total_email_graph + total_addresses_graph + total_persons_graph
+
+    return total_contact_graph
+
+
+def oauth_authorize(request):
+    try:
+        if request.method == 'GET':
+            client_id = str(request.GET['client_id'])
+            # callback_url = str(request.GET['callback_url'])
+            print client_id + " - "
+
+            redirect_url = settings.APPSCALE_APP_URL + "/oauth/authorize/?state=random_state_string&client_id=" + client_id + "&response_type=code"
+
+            if is_logged_in():
+                # check
+                app = Application.objects.get(client_id=client_id)
+                application = {'name': getattr(app, 'name'), 'scopes_descriptions': settings.SCOPES,
+                               'scope': " ".join(settings.SCOPES), 'redirect_uri': getattr(app, 'redirect_uris'),
+                               'client_id': getattr(app, 'client_id')}
+
+                return render(request, "oauth2_provider/authorize.html", application)
+            else:
+                return redirect(users.create_login_url(redirect_url))
+        elif request.method == 'POST':
+            client_id = str(request.GET['client_id'])
+            if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
+                token = BearerToken()
+                grant = AuthorizationCodeGrantPds()
+
+                userprofile = Profile.objects.get(email=get_user_email())
+                request_ = {'client_id': request.POST.get('client_id'),
+                            'redirect_uri': request.POST.get('redirect_uri'),
+                            'response_type': request.POST.get('response_type', None),
+                            'state': request.POST.get('state', None),
+                            'client': Application.objects.get(client_id=client_id), 'user': userprofile,
+                            'scopes': request.POST.get('scope')}
+
+                uri = grant.create_authorization_response(get_object(request_), token)
+                return redirect(uri[0]['Location'])
+            else:
+                client_id = str(request.GET['client_id'])
+                application = Application.objects.get(client_id=client_id)
+
+                log.debug("Redirecting " + application.redirect_uris + "?error=access_denied")
+                return redirect(application.redirect_uris + "?error=access_denied")
+        else:
+            return Response({'status': False, 'message': 'Method not allowed'},
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    except ServiceUnavailable:
+        return Response({'status': False, 'message': 'Internal Server Error'}, status=status.HTTP_404_NOT_FOUND)
+
+
+def oauth_login(request):
+    try:
+        if request.method == 'GET':
+            client_id = str(request.GET['client_id'])
+            redirect_uri = str(request.GET['redirect_uri'])
+            # Get requesting Client, redirect with error if not found
+            print "CLIENT_IT"
+            print str(request.GET['client_id'])
+            print str(request.GET['redirect_uri'])
+            Application.objects.get(client_id=client_id)
+
+            post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + "&response_type=code&redirect_uri=" + redirect_uri + "&state=random_state_string"
+
+            if is_logged_in():
+                application = {'name': "App", 'scopes_descriptions': settings.SCOPES,
+                               'scope': " ".join(settings.SCOPES), 'redirect_uri': redirect_uri, 'client_id': client_id}
+
+                return render(request, "oauth2_provider/authorize.html", application)
+            else:
+                return redirect(users.create_login_url(post_login_redirect_url))
+        elif request.method == 'POST':
+            if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
+
+                payload = 'response_type=code&client_id='+str(request.POST.get('client_id')).strip()+'&redirect_uri='+str(request.POST.get('redirect_uri')).strip()+'&state='+str(request.POST.get('state')).strip()+'&scope='+str(request.POST.get('scope')).strip()+'&key_rules={"allowance":1000,"rate":1000,"per":60,"expires":'+str(settings.ACCESS_TOKEN_EXPIRE_SECONDS)+',"quota_max":-1,"quota_renews":1406121006,"quota_remaining":0,"quota_renewal_rate":60,"access_rights":{"'+settings.PDS_API_ID+'":{"api_name":"'+settings.PDS_API_NAME+'","api_id":"'+settings.PDS_API_ID+'","versions":["Default"],"allowed_urls":[{"url":"/api/v1/users/'+str(get_user_id()).strip()+'/emails/(.*)","methods":["GET"]},{"url":"/api/v1/users/'+str(get_user_id()).strip()+'/telephones/(.*)","methods":["GET"]},{"url":"/api/v1/users/'+str(get_user_id()).strip()+'/addresses/(.*)","methods":["GET"]},{"url":"/api/v1/users/'+str(get_user_id()).strip()+'/persons/(.*)","methods":["GET"]}]}},"org_id":"'+settings.TYK_API_ORG_ID+'","oauth_client_id":"'+str(request.POST.get('client_id')).strip()+'","hmac_enabled":false,"hmac_string":"","apply_policy_id":"'+settings.TYK_API_POLICY_ID+'"}'
+
+                headers = {'Content-Type': 'application/x-www-form-urlencoded',
+                           'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
+
+                print payload
+
+                # make POST
+                r = urlfetch.fetch(url=settings.TYK_OAUTH_AUTHORIZE_ENDPOINT, payload=payload, method=urlfetch.POST,
+                                   headers=headers)
+
+                if r.status_code == 200:
+                    response = simplejson.loads(r.content)
+                    print "serialized code"
+                    print response['code']
+                    print r.content
+
+                    # save
+                    grant = AuthorizationCodeGrantPds()
+
+                    print "User ID"
+                    print get_user_email()
+                    user_profile = Profile.objects.get(email=get_user_email())
+
+                    client_id = str(request.GET.get('client_id'))
+                    application = Application.objects.get(client_id=client_id)
+
+                    request_ = {'client_id': request.POST.get('client_id'),
+                                'redirect_uri': request.POST.get('redirect_uri'),
+                                'response_type': request.POST.get('response_type', "code"),
+                                'state': request.POST.get('state', None), 'client': application, 'user': user_profile,
+                                'scopes': request.POST.get('scope')}
+
+                    code = {'code': response['code']}
+                    grant.save_authorization_client_code(get_object(request_), code)
+
+                    return redirect(response['redirect_to'])
+                else:
+                    response = {'message': r.content, 'status_code': r.status_code}
+                    print "Error " + str(r.content) + " - " + str(r.status_code)
+                    return render(request, "oauth2_provider/authorize_error.html", response)
+            else:
+                log.debug("Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied")
+                print "Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied"
+                return redirect(request.POST.get('redirect_uri') + "?error=access_denied")
+        else:
+            return Response({'status': False, 'message': 'Method not allowed'},
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    except ServiceUnavailable:
+        return Response({'status': False, 'message': 'Internal Server Error'}, status=status.HTTP_404_NOT_FOUND)
+    except Application.DoesNotExist:
+        return redirect(request.GET.get('redirect_uri') + "?error=Application with the client_id does not exist!")
+
+
+def oauth_tyk_notify(request):
+    print "oauth_tyk_notify"
+    try:
+        if request.method == 'POST':
+            received_json_data = json.loads(request.body)
+            print received_json_data
+            refresh_token = received_json_data['refresh_token']
+            auth_code = received_json_data['auth_code']
+            new_oauth_token = received_json_data['new_oauth_token']
+            old_refresh_token = received_json_data['old_refresh_token']
+            notification_type = received_json_data['notification_type']
+
+            grant = Grant.objects.get(code=auth_code)
+
+            print "Saving access_token"
+
+            token = {
+                'access_token': new_oauth_token,
+                'scope': grant.scope,
+                'refresh_token': refresh_token,
+                'auth_code': auth_code,
+                'old_refresh_token': old_refresh_token,
+                'notification_type': notification_type,
+                'new_oauth_token': new_oauth_token
+            }
+
+            request_ = {
+                'client': grant.application,
+                'user': grant.user,
+                'refresh_token': "",
+                'grant_type': 'authorization_code'
+            }
+
+            pds_auth = AuthorizationCodeGrantPds()
+            pds_auth.save_bearer_token(token, get_object(request_))
+
+            return HttpResponse(status=200)
+    except Grant.DoesNotExist or Profile.DoesNotExist or Application.DoesNotExist:
+        print "exception"
+        return HttpResponse(status=404)
+
+
+class ApplicationRegistration(CreateView):
+    """
+    View used to register a new Application for the request.user
+    """
+    template_name = "oauth2_provider/application_registration_form.html"
+
+    def get_form_class(self):
+        """
+        Returns the form class for the application model
+        """
+        return modelform_factory(Application, fields=(
+        'name', 'client_id', 'client_secret', 'client_type', 'authorization_grant_type', 'redirect_uris'))
+
+
+class ApplicationOwnerIsUserMixin():
+    """
+    This mixin is used to provide an Application queryset filtered by the current request.user.
+    """
+    fields = '__all__'
+
+    def get_queryset(self):
+        print get_user_email()
+        profile = Profile.objects.get(email=get_user_email())
+
+        return Application.objects.filter(user_id=profile.id)
+
+
+class ApplicationList(ApplicationOwnerIsUserMixin, ListView):
+    """
+    List view for all the applications owned by the request.user
+    """
+    context_object_name = 'applications'
+    template_name = "oauth2_provider/application_list.html"
+
+
+class ApplicationDetail(ApplicationOwnerIsUserMixin, DetailView):
+    """
+    Detail view for an application instance owned by the request.user
+    """
+    context_object_name = 'application'
+    template_name = "oauth2_provider/application_detail.html"
+
+
+class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
+    """
+    View used to update an application owned by the request.user
+    """
+    context_object_name = 'application'
+    template_name = "oauth2_provider/application_form.html"
+
+
+class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
+    """
+    View used to delete an application owned by the request.user
+    """
+    context_object_name = 'application'
+    success_url = reverse_lazy('oauth2_provider:list')
+    template_name = "oauth2_provider/application_confirm_delete.html"
+
+
+class Struct(object):
+    def __init__(self, adict):
+        """Convert a dictionary to a class
+
+        @param :adict Dictionary
+        """
+        self.__dict__.update(adict)
+        for k, v in adict.items():
+            if isinstance(v, dict):
+                self.__dict__[k] = Struct(v)
+
+
+def get_object(adict):
+    """Convert a dictionary to a class
+
+    @param :a dict Dictionary
+    @return :class:Struct
+    """
+    return Struct(adict)

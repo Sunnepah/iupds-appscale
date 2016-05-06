@@ -23,7 +23,7 @@
 
     activate();
     //vm.contacts =
-    getContactDetails()
+    getContactDetails();
 
      /**
     * @name activate
