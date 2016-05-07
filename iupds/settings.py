@@ -210,7 +210,8 @@ VIRTUOSO_USER = "dba"
 VIRTUOSO_PASSW = "dba"
 
 
-GRAPH_ROOT = 'http://inforegister.ee/users'
+GRAPH_ROOT = 'https://graph.ir.ee/users'
+# GRAPH_ROOT = 'http://192.168.33.19:9000/users'
 
 REMOTE_COMMAND_HOST = 'http://192.168.33.19:9000/api/v1/commands/'
 
