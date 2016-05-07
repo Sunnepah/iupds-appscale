@@ -266,7 +266,6 @@ def get_user_data():
     try:
         user = users.get_current_user()
         if user:
-            # users.User(email='test@example.com',_user_id='185804764220139124118')
             data = {"email": user.email(), "nickname": user.nickname(), "user_id": user.user_id(),
                     "is_current_user_admin": users.is_current_user_admin()}
             return data
