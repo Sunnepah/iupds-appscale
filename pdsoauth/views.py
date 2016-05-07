@@ -11,8 +11,9 @@ from google.appengine.api import urlfetch
 from iupds import settings
 import simplejson
 
-from iupdsmanager.views import is_logged_in, get_user_email
+from iupdsmanager.views import is_logged_in, get_user_email, get_profile
 from iupdsmanager.models import Application, Profile, AccessToken, Grant
+from iupdsmanager.authorization_code import AuthorizationCodeGrantPds
 
 
 @api_view(['GET'])
@@ -55,26 +56,33 @@ def revoke_application(request, pk):
                            'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
 
                 application = Application.objects.get(pk=pk)
-                token = AccessToken.objects.get(application=application)
+                tokens = AccessToken.objects.filter(application=application, user=get_profile()).values()
+                print tokens
+
+                pds_auth = AuthorizationCodeGrantPds()
 
                 # make DELETE
-                r = urlfetch.fetch(url=settings.TYK_DELETE_ACCESS_TOKEN + "/" +
-                                   token['token'] + "?api_id=" + settings.PDS_API_ID,
-                                   method=urlfetch.DELETE, headers=headers)
+                for token in tokens:
+                    print 'tokens'
+                    print token['token']
+                    pds_auth.revoke_token(token['token'], 'access_token', request)
+                    r = urlfetch.fetch(url=settings.TYK_DELETE_ACCESS_TOKEN + "/" +
+                                       token['token'] + "?api_id=" + settings.PDS_API_ID,
+                                       method=urlfetch.DELETE, headers=headers)
 
-                if r.status_code == 200:
-                    response = simplejson.loads(r.content)
-                    print "Delete token from tyk"
-                    print response
+                    if r.status_code == 200:
+                        response = simplejson.loads(r.content)
+                        print "Delete token from tyk"
+                        print response
 
-                    token.delete()
-                    application.delete()
+                        print "Deleting Grants"
+                        Grant.objects.filter(application=application, user=get_profile()).delete()
 
-                    return Response()
-                else:
-                    response = simplejson.loads(r.content)
-                    print "unable to delete token from tyk"
-                    print response
+                        return Response()
+                    else:
+                        response = simplejson.loads(r.content)
+                        print "unable to delete token from tyk"
+                        print response
             else:
                 users.create_login_url('/')
         else:

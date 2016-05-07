@@ -165,4 +165,7 @@ class AuthorizationCodeGrantPds(AuthorizationCodeGrant):
     def save_bearer_token(self, token, request):
         request_validator.save_bearer_token(token, request)
 
+    def revoke_token(self, token, token_type_hint, request):
+        request_validator.revoke_token(token, token_type_hint, request)
+
 

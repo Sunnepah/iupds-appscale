@@ -577,7 +577,6 @@ def set_user_permission_on_personal_graph(graph, username):
 
 
 def get_email_graph_uri():
-    user = get_user_data()
     print settings.GRAPH_ROOT + '/' + get_user_id() + '/emails'
     return settings.GRAPH_ROOT + '/' + get_user_id() + '/emails'
 

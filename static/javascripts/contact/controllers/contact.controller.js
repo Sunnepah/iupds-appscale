@@ -21,14 +21,23 @@
     vm.contact = [];
     vm.user = []
 
-    vm.contact = {'email': 'sunday.ayandokun@ut.ee',
-                      'telephone': '+37256724770',
-                      'telephone_type': 'Mobile',
-                      'street1': 'RAATUSE 22 - 326',
-                      'street2': 'RAATUSE 22 - 326',
-                      'city': 'Tartu',
-                      'post_code': '51009',
-                      'country': 'Estonia'};
+    vm.contact = {'email': '',
+                  'telephone': '',
+                  'telephone_type': 'Mobile',
+                  'street1': '',
+                  'street2': '',
+                  'city': '',
+                  'post_code': '',
+                  'country': ''};
+
+//    vm.contact = {'email': 'sunday.ayandokun@ut.ee',
+//                      'telephone': '+37256724770',
+//                      'telephone_type': 'Mobile',
+//                      'street1': 'RAATUSE 22 - 326',
+//                      'street2': 'RAATUSE 22 - 326',
+//                      'city': 'Tartu',
+//                      'post_code': '51009',
+//                      'country': 'Estonia'};
 
     //activate();
 
