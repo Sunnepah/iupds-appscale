@@ -4,24 +4,24 @@ FORMAT: 1A
 
 API description for request and response examples for pds
 
-## Person [/185804764220139124118/persons]
+## Person [/users/185804764220139124118/persons]
 
 ### Get Basic Personal Data [GET]
 
 + Response 200 (application/json)
 
- 
+
         [
             {
                 "format": "linked-data-api",
                 "version": "1.0",
                 "result": [
                     {
-                        "_about": "http://inforegister.ee/185804764220139124118/persons",
-                        "definition": "http://inforegister.ee/meta/user_id/_persons.json",
-                        "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/persons.json?_metadata=all",
+                        "_about": "https://graph.ir.ee/users/185804764220139124118/persons",
+                        "definition": "https://graph.ir.ee/users/meta/user_id/_persons.json",
+                        "extendedMetadataVersion": "https://graph.ir.ee/users/185804764220139124118/persons.json?_metadata=all",
                         "primaryTopic": {
-                            "_about": "http://inforegister.ee/185804764220139124118/persons",
+                            "_about": "https://graph.ir.ee/users/185804764220139124118/persons",
                             "id": "185804764220139124118",
                             "name": "Sunday Ayandokun",
                             "givenname": "Sunday",
@@ -33,24 +33,24 @@ API description for request and response examples for pds
                             "nick": "sunnepah",
                             "openid": "sunnepah",
                             "homepage": "https://about.me/sunnepah",
-                            "account": "http://inforegister.ee/185804764220139124118/accounts",
+                            "account": "https://graph.ir.ee/users/185804764220139124118/accounts",
                             "identifier": "185804764220139124118",
                             "created": "2016-03-09T12:25:10Z",
                             "modified": "2016-03-09T12:25:10Z"
                         },
-                        "hasContract": "http://inforegister.ee/185804764220139124118/public-contracts"
+                        "hasContract": "https://graph.ir.ee/users/185804764220139124118/public-contracts"
                     }
                 ]
             }
-        ]  
- 
-+ Response 404 (application/json) 
+        ]
 
-        
++ Response 404 (application/json)
+
+
         [
         ]
 
-## Person Emails [/185804764220139124118/emails]
+## Person Emails [/users/185804764220139124118/emails]
 
 ### Get Personal Emails [GET]
 
@@ -61,20 +61,20 @@ API description for request and response examples for pds
                 "format": "linked-data-api",
                 "version": "1.0",
                 "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/emails",
-                    "definition": "http://inforegister.ee/meta/user_id/_emails.json",
-                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/emails.json?_metadata=all",
-                    "first": "http://inforegister.ee/185804764220139124118/emails.json?_page=0",
-                    "hasPart": "http://inforegister.ee/185804764220139124118/emails.json",
-                    "isPartOf": "http://inforegister.ee/185804764220139124118/emails.json",
+                    "_about": "https://graph.ir.ee/users/185804764220139124118/emails",
+                    "definition": "https://graph.ir.ee/users/meta/user_id/_emails.json",
+                    "extendedMetadataVersion": "https://graph.ir.ee/users/185804764220139124118/emails.json?_metadata=all",
+                    "first": "https://graph.ir.ee/users/185804764220139124118/emails.json?_page=0",
+                    "hasPart": "https://graph.ir.ee/users/185804764220139124118/emails.json",
+                    "isPartOf": "https://graph.ir.ee/users/185804764220139124118/emails.json",
                     "items": [
                         {
-                            "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                            "_about": "https://graph.ir.ee/users/185804764220139124118/emails/sunday-ayandokun-ut-ee",
                             "hasValue": "mailto:sunday.ayandokun@ut.ee",
                             "type": "http://www.w3.org/2006/vcard/ns#School"
                         },
                         {
-                            "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-gmail-com",
+                            "_about": "https://graph.ir.ee/users/185804764220139124118/emails/sunday-ayandokun-gmail-com",
                             "hasValue": "mailto:sunday.ayandokun@gmail.com",
                             "type": "http://www.w3.org/2006/vcard/ns#Personal"
                         }
@@ -90,13 +90,13 @@ API description for request and response examples for pds
                 }
             }
         ]
-        
-+ Response 404 (application/json) 
+
++ Response 404 (application/json)
 
         [
         ]
- 
-## A single Email [/185804764220139124118/emails/sunday-ayandokun-ut-ee]
+
+## A single Email [/users/185804764220139124118/emails/sunday-ayandokun-ut-ee]
 
 ### Get Personal Email [GET]
 
@@ -106,11 +106,11 @@ API description for request and response examples for pds
             "format": "linked-data-api",
             "version": "0.2",
             "result": {
-                "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json",
-                "definition": "http://inforegister.ee/185804764220139124118/meta/emails/_email.json",
-                "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee.json?_metadata=all",
+                "_about": "https://graph.ir.ee/users/185804764220139124118/emails/sunday-ayandokun-ut-ee.json",
+                "definition": "https://graph.ir.ee/users/185804764220139124118/meta/emails/_email.json",
+                "extendedMetadataVersion": "https://graph.ir.ee/users/185804764220139124118/emails/sunday-ayandokun-ut-ee.json?_metadata=all",
                 "primaryTopic": {
-                    "_about": "http://inforegister.ee/185804764220139124118/emails/sunday-ayandokun-ut-ee",
+                    "_about": "https://graph.ir.ee/users/185804764220139124118/emails/sunday-ayandokun-ut-ee",
                     "hasValue": "mailto:sunday.ayandokun@ut.ee",
                     "type": "http://www.w3.org/2006/vcard/ns#School"
                 },
@@ -120,13 +120,13 @@ API description for request and response examples for pds
                 ]
             }
         }
-        
-+ Response 404 (application/json) 
+
++ Response 404 (application/json)
 
         [
         ]
 
-## Person Telephones [/185804764220139124118/telephones]
+## Person Telephones [/users/185804764220139124118/telephones]
 
 ### Get Personal Telephones [GET]
 
@@ -137,15 +137,15 @@ API description for request and response examples for pds
                 "format": "linked-data-api",
                 "version": "1.0",
                 "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/telephones",
-                    "definition": "http://inforegister.ee/meta/user_id/_telephones.json",
-                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/telephones.json?_metadata=all",
-                    "first": "http://inforegister.ee/185804764220139124118/telephones.json?_page=0",
-                    "hasPart": "http://inforegister.ee/185804764220139124118/telephones.json",
-                    "isPartOf": "http://inforegister.ee/185804764220139124118/telephones.json"
+                    "_about": "https://graph.ir.ee/users/185804764220139124118/telephones",
+                    "definition": "https://graph.ir.ee/users/meta/user_id/_telephones.json",
+                    "extendedMetadataVersion": "https://graph.ir.ee/users/185804764220139124118/telephones.json?_metadata=all",
+                    "first": "https://graph.ir.ee/users/185804764220139124118/telephones.json?_page=0",
+                    "hasPart": "https://graph.ir.ee/users/185804764220139124118/telephones.json",
+                    "isPartOf": "https://graph.ir.ee/users/185804764220139124118/telephones.json"
                     "items": [
                         {
-                            "_about": "http://inforegister.ee/185804764220139124118/telephones/0037256724770",
+                            "_about": "https://graph.ir.ee/users/185804764220139124118/telephones/0037256724770",
                             "hasValue": "tel:+37256724770",
                             "type": "http://www.w3.org/2006/vcard/ns#Office"
                         }
@@ -162,12 +162,12 @@ API description for request and response examples for pds
             }
         ]
 
-+ Response 404 (application/json) 
++ Response 404 (application/json)
 
         [
         ]
 
-## Person Addresses [/185804764220139124118/addresses]
+## Person Addresses [/users/185804764220139124118/addresses]
 
 ### Get Personal Addresses [GET]
 
@@ -178,15 +178,15 @@ API description for request and response examples for pds
                 "format": "linked-data-api",
                 "version": "1.0",
                 "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/addresses",
-                    "definition": "http://inforegister.ee/meta/user_id/_addresses.json",
-                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/addresses.json?_metadata=all",
-                    "first": "http://inforegister.ee/185804764220139124118/addresses.json?_page=0",
-                    "hasPart": "http://inforegister.ee/185804764220139124118/addresses.json",
-                    "isPartOf": "http://inforegister.ee/185804764220139124118/addresses.json"
+                    "_about": "https://graph.ir.ee/users/185804764220139124118/addresses",
+                    "definition": "https://graph.ir.ee/users/meta/user_id/_addresses.json",
+                    "extendedMetadataVersion": "https://graph.ir.ee/users/185804764220139124118/addresses.json?_metadata=all",
+                    "first": "https://graph.ir.ee/users/185804764220139124118/addresses.json?_page=0",
+                    "hasPart": "https://graph.ir.ee/users/185804764220139124118/addresses.json",
+                    "isPartOf": "https://graph.ir.ee/users/185804764220139124118/addresses.json"
                     "items": [
                         {
-                            "_about": "http://inforegister.ee/185804764220139124118/addresses/akadeemia-tee-7-2-418b",
+                            "_about": "https://graph.ir.ee/users/185804764220139124118/addresses/akadeemia-tee-7-2-418b",
                             "country-name": "Estonia",
                             "locality": "Tallinn",
                             "postal-code": [
@@ -208,13 +208,13 @@ API description for request and response examples for pds
                 }
             }
         ]
-    
-+ Response 404 (application/json) 
+
++ Response 404 (application/json)
 
         [
         ]
 
-## Person Accounts [/185804764220139124118/accounts]
+## Person Accounts [/users/185804764220139124118/accounts]
 
 ### Get Personal Accounts [GET]
 
@@ -225,15 +225,15 @@ API description for request and response examples for pds
                 "format": "linked-data-api",
                 "version": "1.0",
                 "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/accounts",
-                    "definition": "http://inforegister.ee/meta/user_id/_accounts.json",
-                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/accounts.json?_metadata=all",
-                    "first": "http://inforegister.ee/185804764220139124118/accounts.json?_page=0",
-                    "hasPart": "http://inforegister.ee/185804764220139124118/accounts.json",
-                    "isPartOf": "http://inforegister.ee/185804764220139124118/accounts.json"
+                    "_about": "https://graph.ir.ee/users/185804764220139124118/accounts",
+                    "definition": "https://graph.ir.ee/users/meta/user_id/_accounts.json",
+                    "extendedMetadataVersion": "https://graph.ir.ee/users/185804764220139124118/accounts.json?_metadata=all",
+                    "first": "https://graph.ir.ee/users/185804764220139124118/accounts.json?_page=0",
+                    "hasPart": "https://graph.ir.ee/users/185804764220139124118/accounts.json",
+                    "isPartOf": "https://graph.ir.ee/users/185804764220139124118/accounts.json"
                     "items": [
                         {
-                            "_about": "http://inforegister.ee/sunday-ayandokun",
+                            "_about": "https://graph.ir.ee/users/sunday-ayandokun",
                             "accountServiceHomepage": "http://inforegister.ee",
                             "accountName": "Sunday Ayandokun",
                             "type": [
@@ -241,7 +241,7 @@ API description for request and response examples for pds
                                 "http://xmlns.com/foaf/0.1/OnlineEcommerceAccount"
                             ],
                             "created": "2006-09-07T09:33:30Z",
-                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "has_function": "https://graph.ir.ee/users/userType/Registered",
                             "aimChatID": ""
                         },
                         {
@@ -253,7 +253,7 @@ API description for request and response examples for pds
                                 "http://xmlns.com/foaf/0.1/OnlineChatAccount"
                             ],
                             "created": "2006-09-07T09:33:30Z",
-                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "has_function": "https://graph.ir.ee/users/userType/Registered",
                             "aimChatID": "sundayayandokun"
                         },
                         {
@@ -265,7 +265,7 @@ API description for request and response examples for pds
                                 "http://xmlns.com/foaf/0.1/OnlineGamingAccount"
                             ],
                             "created": "2006-09-07T09:33:30Z",
-                            "has_function": "http://inforegister.ee/userType/Registered",
+                            "has_function": "https://graph.ir.ee/users/userType/Registered",
                             "aimChatID": "sunday.ayandokun@live.com"
                         }
                     ],
@@ -280,13 +280,13 @@ API description for request and response examples for pds
                 }
             }
         ]
-    
-+ Response 404 (application/json) 
+
++ Response 404 (application/json)
 
         [
         ]
 
-## Public Contract [/185804764220139124118/public-contracts]
+## Public Contract [/users/185804764220139124118/public-contracts]
 
 ### Get Public Contract [GET]
 
@@ -297,12 +297,12 @@ API description for request and response examples for pds
                 "format": "linked-data-api",
                 "version": "1.0",
                 "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/public-contracts",
-                    "definition": "http://inforegister.ee/meta/user_id/_public-contracts.json",
-                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/public-contracts.json?_metadata=all",
-                    "first": "http://inforegister.ee/185804764220139124118/public-contracts.json?_page=0",
-                    "hasPart": "http://inforegister.ee/185804764220139124118/public-contracts.json",
-                    "isPartOf": "http://inforegister.ee/185804764220139124118/public-contracts.json",
+                    "_about": "https://graph.ir.ee/users/185804764220139124118/public-contracts",
+                    "definition": "https://graph.ir.ee/users/meta/user_id/_public-contracts.json",
+                    "extendedMetadataVersion": "https://graph.ir.ee/users/185804764220139124118/public-contracts.json?_metadata=all",
+                    "first": "https://graph.ir.ee/users/185804764220139124118/public-contracts.json?_page=0",
+                    "hasPart": "https://graph.ir.ee/users/185804764220139124118/public-contracts.json",
+                    "isPartOf": "https://graph.ir.ee/users/185804764220139124118/public-contracts.json",
                     "items": [
                         {
                             "_about": "https://inforegister.ee/public-contracts/123435353-24253253532",
@@ -329,13 +329,13 @@ API description for request and response examples for pds
                 }
             }
         ]
-    
-+ Response 404 (application/json) 
+
++ Response 404 (application/json)
 
         [
         ]
-        
-## Monitoring [/185804764220139124118/monitoring-organizations]
+
+## Monitoring [/users/185804764220139124118/monitoring-organizations]
 
 ### Get Monitoring [GET]
 
@@ -346,160 +346,15 @@ API description for request and response examples for pds
                 "format": "linked-data-api",
                 "version": "1.0",
                 "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/monitoring-organizations",
-                    "definition": "http://inforegister.ee/meta/user_id/_monitoring-organizations.json",
-                    "extendedMetadataVersion": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json?_metadata=all",
-                    "first": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json?_page=0",
-                    "hasPart": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json",
-                    "isPartOf": "http://inforegister.ee/185804764220139124118/monitoring-organizations.json"
+                    "_about": "https://graph.ir.ee/users/185804764220139124118/monitoring-organizations",
+                    "definition": "https://graph.ir.ee/users/meta/user_id/_monitoring-organizations.json",
+                    "extendedMetadataVersion": "https://graph.ir.ee/users/185804764220139124118/monitoring-organizations.json?_metadata=all",
+                    "first": "https://graph.ir.ee/users/185804764220139124118/monitoring-organizations.json?_page=0",
+                    "hasPart": "https://graph.ir.ee/users/185804764220139124118/monitoring-organizations.json",
+                    "isPartOf": "https://graph.ir.ee/users/185804764220139124118/monitoring-organizations.json"
                     "items": [
                         {
                             "_about": "https://graph.ir.ee/organizations/ee-11111111",
-                        },
-                      
-                    ],
-                    "itemsPerPage": 50,
-                    "page": 0,
-                    "startIndex": 1,
-                    "totalResults": 1,
-                    "type": [
-                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
-                        "http://purl.org/linked-data/api/vocab#Page"
-                    ]
-                }
-            }
-        ]
-    
-+ Response 404 (application/json) 
-
-        [
-        ]
-
-## Social Facebook [/185804764220139124118/facebook]
-
-### Get Facebook [GET]
-
-+ Response 200 (application/json)
-
-        [
-            {
-                "format": "linked-data-api",
-                "version": "1.0",
-                "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/facebook",
-                    "items": [
-                        {
-                            "_about": "https://www.facebook.com/sunday.ayanbode.ayandokun",
-                            "userId": "9294258282032032340423093",
-                            "accountServiceHomepage": "http://facebook.com",
-                            "accountName": "Sunday Ayandokun",
-                            "type": [
-                                "http://xmlns.com/foaf/0.1/OnlineAccount"
-                            ],
-                            "knows":"https://facebook.com/user-id/friendlists",
-                            "hasPosts":[
-                                "https://facebook.com/post/id",
-                                "https://facebook.com/post/id",
-                                "https://facebook.com/post/id"
-                            ],
-                            "belongsTo": "https://facebook.com/user_id/groups",
-                            "member_of": "https://facebook.com/groups/id",
-                            "hasComments": "https://graph.facebook.com/user_id/comments",
-                            "likes": "https://facebook.com/user_id/likes",
-                            "statusesLikes": "",
-                            "avatar": "graph.com/3et54rty7686576856865854",
-                            "updatedTime": "2006-09-07T09:33:30Z"
-                        },
-
-                    ],
-                    "itemsPerPage": 50,
-                    "page": 0,
-                    "startIndex": 1,
-                    "totalResults": 1,
-                    "type": [
-                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
-                        "http://purl.org/linked-data/api/vocab#Page"
-                    ]
-                }
-            }
-        ]
-
-+ Response 404 (application/json)
-
-        [
-        ]
-        
-## Social Twitter [/185804764220139124118/twitter]
-
-### Get Twitter [GET]
-
-+ Response 200 (application/json)
-
-        [
-            {
-                "format": "linked-data-api",
-                "version": "1.0",
-                "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/twitter",
-                    "items": [
-                        {
-                            "_about": "https://www.twitter.com/sundayayanbode",
-                            "userId": "9294258282032032340423093",
-                            "accountServiceHomepage": "http://twitter.com",
-                            "accountName": "Sunday Ayandokun",
-                            "type": [
-                                "http://xmlns.com/foaf/0.1/OnlineAccount"
-                            ],
-                            "hasTweets":"https://api.twitter.com/1.1/twitter_id/statuses/user_timeline",
-                            "follows": "https://api.twitter.com/1.1/twitter_id/friends",
-                            "hasFollowers": "https://api.twitter.com/1.1/twitter_id/followers",
-                            "favorites": "https://api.twitter.com/1.1/twitter_id/favorites/list",
-                            "avatar": "twitter.com/3et54rty7686576856865854",
-                            "updatedTime": "2006-09-07T09:33:30Z",
-                        },
-
-                    ],
-                    "itemsPerPage": 50,
-                    "page": 0,
-                    "startIndex": 1,
-                    "totalResults": 1,
-                    "type": [
-                        "http://purl.org/linked-data/api/vocab#ListEndpoint",
-                        "http://purl.org/linked-data/api/vocab#Page"
-                    ]
-                }
-            }
-        ]
-
-+ Response 404 (application/json)
-
-        [
-        ]
-        
-## Social Linkedln [/185804764220139124118/linkedln]
-
-### Get Linkedln [GET]
-
-+ Response 200 (application/json)
-
-        [
-            {
-                "format": "linked-data-api",
-                "version": "1.0",
-                "result": {
-                    "_about": "http://inforegister.ee/185804764220139124118/linkedln",
-                    "items": [
-                        {
-                            "_about": "https://www.linkedln.com/sundayayanbode",
-                            "userId": "9294258282032032340423093",
-                            "accountServiceHomepage": "http://linkedln.com",
-                            "accountName": "Sunday Ayandokun",
-                            "type": [
-                                "http://xmlns.com/foaf/0.1/OnlineAccount"
-                            ],
-                            "hasConnections": "",
-                            "avatar": "linkedln.com/3et54rty7686576856865854",
-                            "updatedTime": "2006-09-07T09:33:30Z",
                         },
 
                     ],
