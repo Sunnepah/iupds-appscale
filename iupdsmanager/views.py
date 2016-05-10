@@ -670,17 +670,18 @@ def oauth_login(request):
     try:
         if request.method == 'GET':
             client_id = str(request.GET['client_id'])
-            redirect_uri = str(request.GET['redirect_uri'])
+            # redirect_uri = str(request.GET['redirect_uri'])
             # Get requesting Client, redirect with error if not found
             print "CLIENT_IT"
             print str(request.GET['client_id'])
-            print str(request.GET['redirect_uri'])
-            Application.objects.get(client_id=client_id)
 
-            post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + "&response_type=code&redirect_uri=" + redirect_uri + "&state=random_state_string"
+            app = Application.objects.get(client_id=client_id)
+            redirect_uri = str(app.redirect_uris)
+
+            post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + "&redirect_uri=" + redirect_uri + "&state=random_state_string&response_type=code"
 
             if is_logged_in():
-                application = {'name': "App", 'scopes_descriptions': settings.SCOPES,
+                application = {'name': str(app.name), 'scopes_descriptions': settings.SCOPES,
                                'scope': " ".join(settings.SCOPES), 'redirect_uri': redirect_uri, 'client_id': client_id}
 
                 return render(request, "oauth2_provider/authorize.html", application)
@@ -709,8 +710,6 @@ def oauth_login(request):
                     # save
                     grant = AuthorizationCodeGrantPds()
 
-                    print "User ID"
-                    print get_user_email()
                     user_profile = Profile.objects.get(email=get_user_email())
 
                     client_id = str(request.GET.get('client_id'))
@@ -735,10 +734,9 @@ def oauth_login(request):
                 print "Redirecting " + request.POST.get('redirect_uri') + "?error=access_denied"
                 return redirect(request.POST.get('redirect_uri') + "?error=access_denied")
         else:
-            return Response({'status': False, 'message': 'Method not allowed'},
-                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    except ServiceUnavailable:
-        return Response({'status': False, 'message': 'Internal Server Error'}, status=status.HTTP_404_NOT_FOUND)
+            return redirect(request.POST.get('redirect_uri') + "?error=method_not_allowed")
+    except ServiceUnavailable or TypeError:
+        return redirect(request.POST.get('redirect_uri') + "?error=internal_server_error")
     except Application.DoesNotExist:
         return redirect(request.GET.get('redirect_uri') + "?error=Application with the client_id does not exist!")
 
