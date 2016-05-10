@@ -57,3 +57,5 @@
     "meta_data": null,
     "tags": null
 }
+
+//{"last_check":0,"allowance":1000,"rate":1000,"per":1,"expires":0,"quota_max":-1,"quota_renews":1460805481,"quota_remaining":-1,"quota_renewal_rate":60,"access_rights":{"f56fbc1dd94f46bb55b2a279f9c8f5e6":{"api_name":"PDS API v1","api_id":"f56fbc1dd94f46bb55b2a279f9c8f5e6","versions":["Default"],"allowed_urls":[{"url":"/api/v1/user/1/emails/(.*)","methods":["GET"]},{"url":"/api/v1/user/1/telephones/(.*)","methods":["GET"]},{"url":"/api/v1/user/1/addresses/(.*)","methods":["GET"]},{"url":"/api/v1/user/1/persons/(.*)","methods":["GET"]}]}},"org_id":"5710f36356c02c0c17000001","oauth_client_id":"","oauth_keys":null,"basic_auth_data":{"password":"","hash_type":""},"jwt_data":{"secret":""},"hmac_enabled":false,"hmac_string":"","is_inactive":false,"apply_policy_id":"5711f41656c02c0c17000003","data_expires":0,"monitor":{"trigger_limits":null},"enable_detail_recording":false,"meta_data":{},"tags":[]}

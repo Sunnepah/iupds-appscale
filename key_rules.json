@@ -17,19 +17,19 @@
             ],
             "allowed_urls": [
                 {
-                    "url": "/api/v1/user/user_id/emails/(.*)",
+                    "url": "/api/v1/user/1/emails/(.*)",
                     "methods": ["GET"]
                 },
                 {
-                    "url": "/api/v1/user/user_id/telephones/(.*)",
+                    "url": "/api/v1/user/1/telephones/(.*)",
                     "methods": ["GET"]
                 },
                 {
-                    "url": "/api/v1/user/user_id/addresses/(.*)",
+                    "url": "/api/v1/user/1/addresses/(.*)",
                     "methods": ["GET"]
                 },
                 {
-                    "url": "/api/v1/user/user_id/persons/(.*)",
+                    "url": "/api/v1/user/1/persons/(.*)",
                     "methods": ["GET"]
                 }
             ]
