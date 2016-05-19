@@ -314,9 +314,9 @@ _DEFAULT_SCOPES = []
 
 # TYK ENDPOINTS
 
-TYK_DASHBOARD_API_CREDENTIAL = 'eefef3f1987544244d7d64f42021ef63'
-TYK_API_ORG_ID = "5710f36356c02c0c17000001"
-TYK_API_POLICY_ID = "5711f41656c02c0c17000003"
+TYK_DASHBOARD_API_CREDENTIAL = '57411d62fbdc4c667a025df0843111c2'
+TYK_API_ORG_ID = "5733a58956c02c0af3000001"
+TYK_API_POLICY_ID = "5736153656c02c0b2e000003"
 
 TYK_GATEWAY_LISTEN_PORT = '8080'
 TYK_GATEWAY_HOST = 'http://my-tyk-instance.dev'
@@ -327,8 +327,8 @@ TYK_OAUTH_AUTHORIZE_ENDPOINT = TYK_GATEWAY + '/tyk/oauth/authorize-client/'
 # If the user accepts the Client access and has authenticated successfully,
 # your app calls the Tyk REST API OAuth Authorization endpoint (/tyk/oauth/authorize-client/) with the POST parameters
 
-PDS_API_KEY = '5710f36356c02c0c1700000157cd1db95c0a45a6569c917ffd959dae'
-PDS_API_ID = 'f56fbc1dd94f46bb55b2a279f9c8f5e6'
+PDS_API_KEY = '5733a58956c02c0af3000001f5e5d3f5ecdc451a554bb18e26a4997b'
+PDS_API_ID = 'f8dda7f3475e48b741b137f32df9a8d5'
 PDS_API_NAME = 'PDS API v1'
 
 # https://tyk.io/docs/tyk-api-gateway-v1-9/tyk-rest-api/
@@ -355,5 +355,3 @@ TYK_DELETE_ACCESS_TOKEN = TYK_GATEWAY + '/tyk/keys/'
 
 APPSCALE_APP_URL = 'http://192.168.33.10:8080'
 # APPSCALE_APP_URL = 'http://localhost:9805'
-
-TOKEN_DELETE = "5710f36356c02c0c170000019d28b66939a2453870dc257f3e808861"
