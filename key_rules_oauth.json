@@ -1,7 +1,7 @@
 {
     "last_check": 0,
-    "allowance": 1000,
-    "rate": 1000,
+    "allowance": 1000000,
+    "rate": 1000000,
     "per": 60,
     "expires": 1461280124,
     "quota_max": -1,
@@ -17,19 +17,19 @@
                ],
                "allowed_urls": [
                    {
-                       "url": "/api/v1/user/user_id/emails/(.*)",
+                       "url": "/api/v1/users/<user_id>/emails/(.*)",
                        "methods": ["GET"]
                    },
                    {
-                       "url": "/api/v1/user/user_id/telephones/(.*)",
+                       "url": "/api/v1/users/<user_id>/telephones/(.*)",
                        "methods": ["GET"]
                    },
                    {
-                       "url": "/api/v1/user/user_id/addresses/(.*)",
+                       "url": "/api/v1/users/<user_id>/addresses/(.*)",
                        "methods": ["GET"]
                    },
                    {
-                       "url": "/api/v1/user/user_id/persons/(.*)",
+                       "url": "/api/v1/users/<user_id>/persons/(.*)",
                        "methods": ["GET"]
                    }
                ]
