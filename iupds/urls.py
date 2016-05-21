@@ -18,16 +18,15 @@ from django.views.decorators.csrf import csrf_exempt
 
 from iupdsmanager.views import index, profile, create_user, logout,\
     create_contact, contact_details, my_contacts, create_graphs,\
-    drop_graphs, create_graph_user, oauth_authorize, oauth_login, oauth_tyk_notify
+    drop_graphs, create_graph_user
 
-from pdsoauth.views import application_list, revoke_application
+from pdsoauth.views import application_list, revoke_application, oauth_login, oauth_tyk_notify, oauth_create_client
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^$', index),
     url(r'^admin/', admin.site.urls),
     url(r'^iupdsmanager/', include('iupdsmanager.urls')),
-    # url('^.*$', IndexView.as_view(), name='index'),
     url(r'^api/v1/profile/$', profile, name='profile'),
     url(r'^api/v1/contact/$', create_contact, name='create_contact'),
     url(r'^api/v1/contact/details$', contact_details, name='contact_details'),
@@ -37,10 +36,10 @@ urlpatterns = [
     url(r'^api/v1/drop_graphs/$', drop_graphs, name='drop_graphs'),
     url(r'^api/v1/create_graphs/$', create_graphs, name='create_graphs'),
     url(r'^api/v1/auth/logout/$', logout, name='logout'),
-    url(r'^oauth/authorize/$', oauth_authorize, name='oauth_authorize'),
     url(r'^o/', include('iupdsmanager.urls', namespace='oauth2_provider')),
     url(r'^oauth/login/$', oauth_login, name='oauth_login'),
     url(r'^oauth/tyk/notify/$', csrf_exempt(oauth_tyk_notify), name='oauth_tyk_notify'),
+    url(r'^oauth/clients/create/$', csrf_exempt(oauth_create_client), name='oauth_create_client_notify'),
     url(r'^api/v1/users/applications/$', application_list, name='user-applications'),
     url(r'^api/v1/users/applications/(?P<pk>[0-9])/$', revoke_application, name='revoke-applications')
 ]
