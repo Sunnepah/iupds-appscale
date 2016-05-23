@@ -57,9 +57,15 @@ for row in csv_data:
                 logging.info("User does not exist, proceed ")
 
             # call uaserver to create user
-            response = user_client.create_user(email, os.urandom(7))
-            
+            start = time.time()
+            # response = user_client.create_user(email, os.urandom(7))
+            response = user_client.create_user(email, "1234567")
+
             if response:
+                round_trip = time.time() - start
+                writer = csv.writer(open("appscale_create_user_response_time_output.csv", 'a'), delimiter=';')
+                writer.writerow([round_trip, ''])
+
                 user_data = user_client.get_user_data(email)
 
                 sql = "INSERT INTO iupdsmanager_profile(uid, user_id_old, email, username, full_name," \
@@ -76,7 +82,7 @@ for row in csv_data:
                           1, 'RU', '', '', 0, '0000-00-00 00:00:00', 0, email
                       )
 
-                print sql
+                # print sql
                 # Execute the SQL command
                 cursor.execute(sql)
                 # Commit your changes in the database
@@ -101,6 +107,7 @@ for row in csv_data:
         logging.info(data)
 
     logging.debug("+++++ Processed "+email+" ++++++++++")
+    time.sleep(15)
 
 # close the connection to the database.
 cursor.close()
