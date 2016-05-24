@@ -21,6 +21,7 @@ Note: the next step will install MySQL,create db and import pds db in the VM.
 db_user, db_name and db_password can be changed here `pds/roles/ansible-mysql/defaults/main.yml`
 
 * `$ vagrant up`
+* `$ appscale up`
 * `$ cd pds/`
 Update the database credentials in iupds/settings.py to 
 * `$ virtualenv venv` 
