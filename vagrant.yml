@@ -1,0 +1,6 @@
+---
+- name: Environment Setup
+  hosts: default
+  become: yes
+  roles:
+  - ansible-mysql

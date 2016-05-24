@@ -1,0 +1,27 @@
+- shell: echo "mysql-server mysql-server/root_password password {{ db_password }}" | debconf-set-selections
+- shell: echo "mysql-server mysql-server/root_password_again password {{ db_password }}" | debconf-set-selections
+
+- name: Install Mysql package
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=3600
+  with_items:
+   - mysql-server
+   - python-mysqldb
+
+- mysql_user: name={{ db_user }} host="%" password={{ db_password }} priv=*.*:ALL login_user=root login_password={{ db_password }}
+- mysql_db: name={{ db_name }} login_user=root login_password={{ db_password }}
+
+- copy: src={{ item }} dest=/tmp
+  with_items:
+  - pds_dump.sql
+
+- mysql_db: name={{ db_name }} state=import target="/tmp/{{ item }}" login_user=root login_password={{ db_password }}
+  with_items:
+  - pds_dump.sql
+
+- name: Create Mysql configuration file
+  template: src=my.cnf.j2 dest=/etc/my.cnf
+  notify:
+  - restart mysql
+
+- name: Start Mysql Service
+  service: name=mysql state=started enabled=yes

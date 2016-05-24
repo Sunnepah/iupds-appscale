@@ -1,0 +1,4 @@
+---
+db_user: root
+db_password: secret
+db_name: iupds_db
