@@ -4,7 +4,7 @@
 
 *NOTE: Requires [virtualenv](http://virtualenv.readthedocs.org/en/latest/),
 [virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/) and
-[Node.js](http://nodejs.org/).*
+[Node.js](http://nodejs.org/), [AppScale](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox).*
 
 * Fork this repository.
 * `$ git clone  git@github.com:<your username>/iupds-appscale.git`
