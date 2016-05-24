@@ -1,15 +1,30 @@
-# iupds-appscale is a Django application
-## Setup Instructions
+### iupds-appscale is a Django application
 
-*NOTE: Requires [virtualenv](http://virtualenv.readthedocs.org/en/latest/),
-[virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/), [Node.js](http://nodejs.org/), [AppScale](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox) and 
-[Django](https://www.djangoproject.com/).*
+*NOTE: Requires [virtualenv](http://virtualenv.readthedocs.org/en/latest/), [Node.js](http://nodejs.org/), [AppScale](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox) and [Django](https://www.djangoproject.com/).*
 
-* Fork this repository.
-* `$ git clone  git@github.com:<your username>/iupds-appscale.git`
-* `$ mkvirtualenv iupds-appscale`
-* `$ cd iupds-appscale/`
-* `$ pip install -r requirements-local.txt`  # for local
+#### Setup AppScale
+Full details here https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox
+* `$ cd ~/appscale   # appscale working directory`
+* `$ mkdir -p ~/appscale`
+* `$ cd ~/appscale`
+* `$ git clone https://github.com/AppScale/appscale-tools.git`
+* `$ cd appscale-tools`
+* `$ sudo python setup.py install`  # Detailed AppScale-tools installation here https://github.com/AppScale/appscale-tools/wiki/Installing-the-AppScale-Tools
+* `$ cd ../`    # go back to AppScale working directory
+ 
+Clone this repository into AppScale working directory.
+* `$ git clone https://github.com/Sunnepah/iupds-appscale.git pds`
+* `$ mv pds/AppScalefile .`
+* `$ mv pds/Vagrantfile .`
+
+Note: the next step will install MySQL,create db and import pds db in the VM. 
+db_user, db_name and db_password can be changed here `pds/roles/ansible-mysql/defaults/main.yml`
+
+* `$ vagrant up`
+* `$ cd pds/`
+Update the database credentials in iupds/settings.py to 
+* `$ virtualenv venv` 
+* `$ source venv/bin/activate`
 * `$ pip install -r requirements-vendor.txt -t lib` # for AppScale deployment
 * `$ npm install -g bower`
 * `$ npm install`
@@ -17,14 +32,10 @@
 * `$ gulp default`
 * `$ python manage.py collectstaticfiles`
 
-# Cloning forked libraries
-* `$ git clone git@github.com:Sunnepah/python-virtuoso.git virtuoso`
-* `$ git clone git@github.com:Sunnepah/sparqlwrapper.git sparqlwrapper`
+#### Cloning forked libraries
+* `$ git clone https://github.com/Sunnepah/python-virtuoso.git virtuoso`
+* `$ git clone https://github.com/Sunnepah/sparqlwrapper.git sparqlwrapper`
 
-# Install MySQL in AppScale Server
-* Create database and modify the database details in iupds/settings.py
-* ...
-
-# To deploy to AppScale - AppScale must be running!
-* `$ appscale deploy /path/to/iupds-appscale`
+#### To deploy to AppScale - AppScale must be running!
+* `$ appscale deploy /path/to/pds`
 You will see the deployed app url.
