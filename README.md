@@ -3,20 +3,20 @@
 *NOTE: Requires [virtualenv](http://virtualenv.readthedocs.org/en/latest/), [Node.js](http://nodejs.org/), [AppScale](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox) and [Django](https://www.djangoproject.com/), [Ansible](http://docs.ansible.com/ansible/intro_installation.html#installation).*
 
 #### Setup AppScale
-Full details here https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox
+Full details [here](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox)
 * `$ cd ~/appscale   # appscale working directory`
 * `$ mkdir -p ~/appscale`
 * `$ cd ~/appscale`
 * `$ git clone https://github.com/AppScale/appscale-tools.git`
 * `$ cd appscale-tools`
-* `$ sudo python setup.py install`  # Detailed AppScale-tools installation here https://github.com/AppScale/appscale-tools/wiki/Installing-the-AppScale-Tools
+* `$ sudo python setup.py install`  # Detailed [AppScale-tools installation](https://github.com/AppScale/appscale-tools/wiki/Installing-the-AppScale-Tools)
 * `$ cd ../`    # go back to AppScale working directory
  
 Clone this repository into AppScale working directory.
 * `$ git clone https://github.com/Sunnepah/iupds-appscale.git pds`
 * `$ mv pds/AppScalefile .`
 * `$ mv pds/Vagrantfile .`
-* `$ sudo pip install ansible` # Installation details here - http://docs.ansible.com/ansible/intro_installation.html#installation
+* `$ sudo pip install ansible` # [Ansible Installation](http://docs.ansible.com/ansible/intro_installation.html#installation)
 
 Note: the next step will install MySQL,create db and import pds db in the VM. 
 db_user, db_name and db_password can be changed here `pds/roles/ansible-mysql/defaults/main.yml`
