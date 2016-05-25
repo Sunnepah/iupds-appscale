@@ -2,11 +2,12 @@
 
 *NOTE: Requires [virtualenv](http://virtualenv.readthedocs.org/en/latest/), [Node.js](http://nodejs.org/), [AppScale](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox) and [Django](https://www.djangoproject.com/), [Ansible](http://docs.ansible.com/ansible/intro_installation.html#installation).*
 
-#### Setup AppScale Full details [here](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox)
+#### Setup AppScale - Full details [here](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox)
 * `$ mkdir -p ~/appscale`
 * `$ cd ~/appscale   # appscale working directory`
 * `$ git clone https://github.com/AppScale/appscale-tools.git`
 * `$ cd appscale-tools`
+* `$ wget https://bootstrap.pypa.io/ez_setup.py -O - | sudo python` # If Python Setuptools is not install already
 * `$ sudo python setup.py install`  # Detailed [AppScale-tools installation](https://github.com/AppScale/appscale-tools/wiki/Installing-the-AppScale-Tools)
 * `$ cd ../`    # go back to AppScale working directory
  
