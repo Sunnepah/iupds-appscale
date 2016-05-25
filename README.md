@@ -16,6 +16,7 @@ Clone this repository into AppScale working directory.
 * `$ git clone https://github.com/Sunnepah/iupds-appscale.git pds`
 * `$ mv pds/AppScalefile .`
 * `$ mv pds/Vagrantfile .`
+* `$ sudo pip install ansible` # Installation details here - http://docs.ansible.com/ansible/intro_installation.html#installation
 
 Note: the next step will install MySQL,create db and import pds db in the VM. 
 db_user, db_name and db_password can be changed here `pds/roles/ansible-mysql/defaults/main.yml`
