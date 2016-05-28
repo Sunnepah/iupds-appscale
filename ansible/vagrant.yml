@@ -4,3 +4,12 @@
   become: yes
   roles:
   - ansible-mysql
+  tasks:
+  - name: Add Tyk Domain to Hosts File
+    shell: echo '{{ tyk_vm_ip }} http://{{ my-tyk-instance.dev }} {{ tyk_dashboard_domain }}' | sudo tee --append /etc/hosts
+  vars:
+      db_user: root
+      db_password: secret
+      db_name: iupds_db
+      tyk_vm_ip: '192.168.33.30'
+      tyk_dashboard_domain: 'my-tyk-instance.dev'
