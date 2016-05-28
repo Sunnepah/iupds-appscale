@@ -27,6 +27,7 @@ Update the database credentials in iupds/settings.py to what you set in `pds/ans
 * `$ sudo pip install virtualenv` 
 * `$ virtualenv venv` 
 * `$ source venv/bin/activate`
+* `$ pip install -r requirements-local.txt`
 * `$ pip install -r requirements-vendor.txt -t lib` # for AppScale deployment
 * `$ npm install -g bower`
 * `$ npm install`
