@@ -11,19 +11,20 @@
 * `$ sudo python setup.py install`  # Detailed [AppScale-tools installation](https://github.com/AppScale/appscale-tools/wiki/Installing-the-AppScale-Tools)
 * `$ cd ../`    # go back to AppScale working directory
  
-Clone this repository into AppScale working directory.
+### Clone this repository into AppScale working directory.
 * `$ git clone https://github.com/Sunnepah/iupds-appscale.git pds`
 * `$ mv pds/AppScalefile .`
 * `$ mv pds/Vagrantfile .`
 * `$ sudo pip install ansible` # [Ansible Installation](http://docs.ansible.com/ansible/intro_installation.html#installation), If `pip` is not yet installed [install pip](https://pip.pypa.io/en/stable/installing/)
 
 Note: the next step will install MySQL,create db and import pds db in the VM. 
-db_user, db_name and db_password can be changed here `pds/roles/ansible-mysql/defaults/main.yml`
+db_user, db_name and db_password can be changed here `pds/ansible/roles/ansible-mysql/defaults/main.yml`
 
 * `$ vagrant up`
 * `$ appscale up`
 * `$ cd pds/`
-Update the database credentials in iupds/settings.py to 
+Update the database credentials in iupds/settings.py to what you set in `pds/ansible/roles/ansible-mysql/defaults/main.yml`
+* `$ sudo pip install virtualenv` 
 * `$ virtualenv venv` 
 * `$ source venv/bin/activate`
 * `$ pip install -r requirements-vendor.txt -t lib` # for AppScale deployment
