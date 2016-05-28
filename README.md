@@ -1,6 +1,6 @@
 ### iupds-appscale is a Django application
 
-*NOTE: Requires [Virtualbox](https://www.virtualbox.org/),[Vagrant](https://www.vagrantup.com/docs/installation/index.html), [Virtualenv](http://virtualenv.readthedocs.org/en/latest/), [Node.js](http://nodejs.org/), [AppScale](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox) and [Django](https://www.djangoproject.com/), [Ansible](http://docs.ansible.com/ansible/intro_installation.html#installation).*
+*NOTE: Requires [Virtualbox](https://www.virtualbox.org/),[Vagrant](https://www.vagrantup.com/docs/installation/index.html), [Virtualenv](http://virtualenv.readthedocs.org/en/latest/), [Node.js](http://nodejs.org/), [AppScale](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox),[Django](https://www.djangoproject.com/), and [Ansible](http://docs.ansible.com/ansible/intro_installation.html#installation).*
 
 #### Setup AppScale - Full details [here](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox)
 * `$ mkdir -p ~/appscale`
