@@ -11,7 +11,6 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.core.exceptions import ImproperlyConfigured
 
 from iupds import settings
-from iupdsmanager.generators import generate_client_id, generate_client_secret
 from iupdsmanager.validators import validate_uris
 from django.apps import apps
 
@@ -215,7 +214,7 @@ class AbstractApplication(models.Model):
     )
 
     client_id = models.CharField(max_length=100, unique=True,
-                                 default=generate_client_id, db_index=True)
+                                 null=False, db_index=True)
     # user = models.ForeignKey(Profile, related_name="%(app_label)s_%(class)s",
     #                          null=True, blank=True)
 
@@ -226,7 +225,7 @@ class AbstractApplication(models.Model):
     authorization_grant_type = models.CharField(max_length=32,
                                                 choices=GRANT_TYPES)
     client_secret = models.CharField(max_length=255, blank=True,
-                                     default=generate_client_secret, db_index=True)
+                                     null=False, db_index=True)
     name = models.CharField(max_length=255, blank=True)
     skip_authorization = models.BooleanField(default=False)
 
