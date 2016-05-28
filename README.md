@@ -39,7 +39,7 @@ Note: the next step will install MySQL,create db and import pds db dump in the V
 db_user, db_name and db_password can be changed here `pds/ansible/roles/ansible-mysql/defaults/main.yml` and you must update those credentials in iupds/settings.py
 
 * `$ vagrant up`
-* `$ appscale up`
+* `$ appscale up`       # If prompted for `root password` , enter `vagrant`
 * `$ appscale deploy pds`
 
-You will see the deployed app url.
+You should see `Your app can be reached at the following URL: http://192.168.33.10:8080`.
