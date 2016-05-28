@@ -72,6 +72,6 @@ Vagrant.configure(2) do |config|
        ansible.groups = {
        "dev" => ["default"]
        }
-       ansible.playbook = "ansible/vagrant.yml"
+       ansible.playbook = "pds/ansible/vagrant.yml"
     end
 end
