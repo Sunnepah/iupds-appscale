@@ -39,6 +39,7 @@ Update the database credentials in iupds/settings.py to what you set in `pds/ans
 * `$ git clone https://github.com/Sunnepah/python-virtuoso.git virtuoso`
 * `$ git clone https://github.com/Sunnepah/sparqlwrapper.git sparqlwrapper`
 
-#### To deploy to AppScale - AppScale must be running!
-* `$ appscale deploy /path/to/pds`
+#### Deploy pds to AppScale!
+* `$ cd ../`    # Return to AppScale working directory
+* `$ appscale deploy pds`
 You will see the deployed app url.
