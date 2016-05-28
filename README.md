@@ -33,7 +33,7 @@ Update the database credentials in iupds/settings.py to what you set in `pds/ans
 * `$ npm install`
 * `$ bower install`
 * `$ gulp default`
-* `$ python manage.py collectstaticfiles`
+* `$ python manage.py collectstatic`
 
 #### Cloning forked libraries
 * `$ git clone https://github.com/Sunnepah/python-virtuoso.git virtuoso`
