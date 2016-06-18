@@ -3,10 +3,12 @@ from google.appengine.api import users
 from google.appengine.api.users import UserNotFoundError
 import urllib
 import urllib2
+import json
 
 from .models import Profile, Contact, Address, Application, Grant, AccessToken, RefreshToken
 from django.shortcuts import render
 from django.core.urlresolvers import reverse_lazy
+from django.http import HttpResponse, JsonResponse
 
 from iupds import settings
 
@@ -196,10 +198,10 @@ def my_contacts(request):
 def create_graphs(request):
     if request.method == 'POST':
         try:
-            create_graph(get_person_graph_uri())
-            create_graph(get_email_graph_uri())
-            create_graph(get_telephone_graph_uri())
-            create_graph(get_address_graph_uri())
+            # create_graph(get_person_graph_uri())
+            # create_graph(get_email_graph_uri())
+            # create_graph(get_telephone_graph_uri())
+            # create_graph(get_address_graph_uri())
 
             return Response({'status': 'Graphs created!'}, status=status.HTTP_200_OK)
         except Exception as e:
@@ -556,6 +558,13 @@ def create_sql_graph_user(username, password='secret'):
     set_user_permission_on_personal_graph(get_telephone_graph_uri(), username)
     set_user_permission_on_personal_graph(get_address_graph_uri(), username)
 
+    create_user_graphs()
+
+def create_user_graphs():
+    create_graph(get_person_graph_uri())
+    create_graph(get_email_graph_uri())
+    create_graph(get_telephone_graph_uri())
+    create_graph(get_address_graph_uri())
 
 def set_user_permission_on_personal_graph(graph, username):
     remote_command("DB.DBA.RDF_DEFAULT_USER_PERMS_SET('" + username + "', 0)")
@@ -687,3 +696,45 @@ def get_object(adict):
     @return :class:Struct
     """
     return Struct(adict)
+
+def new_user(request):
+    print "Create New User"
+    print request
+    try:
+        if request.method == 'POST':
+            received_json_data = json.loads(request.body)
+
+            email = received_json_data['email']
+
+            print "Creating User"
+            from random import randint
+            id = randint(100, 999)  # randint is inclusive at both ends
+            profile = Profile(uid=id,email=email,username=email, appscale_user_id=id, user_id_old=id)
+            profile.save()
+            print "New User created!"
+
+            print "Creating SQl User"
+            password = "secret"
+            remote_command("DB.DBA.USER_CREATE('" + profile.id + "', '" + password + "')")
+            remote_command('GRANT SPARQL_SELECT TO "' + profile.id + '"')
+            remote_command('GRANT SPARQL_UPDATE TO "' + profile.id + '"')
+            remote_command('GRANT SPARQL_SPONGE TO "' + profile.id + '"')
+
+            username = get_user_id()
+            # Set graph permissions on just created user
+            set_user_permission_on_personal_graph(settings.GRAPH_ROOT + '/' + profile.id + '/emails', profile.id)
+            set_user_permission_on_personal_graph(settings.GRAPH_ROOT + '/' + profile.id + '/telephones', profile.id)
+            set_user_permission_on_personal_graph(settings.GRAPH_ROOT + '/' + profile.id + '/addresses', profile.id)
+            set_user_permission_on_personal_graph(settings.GRAPH_ROOT + '/' + profile.id + '/persons', profile.id)
+
+            print "Creating User Graphs"
+            create_graph(settings.GRAPH_ROOT + '/' + profile.id + '/emails')
+            create_graph(settings.GRAPH_ROOT + '/' + profile.id + '/telephones')
+            create_graph(settings.GRAPH_ROOT + '/' + profile.id + '/addresses')
+            create_graph(settings.GRAPH_ROOT + '/' + profile.id + '/persons')
+
+            return HttpResponse(status=200)
+    except Exception as e:
+        print "exception"
+        print e
+        return HttpResponse(status=404)
