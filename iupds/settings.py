@@ -209,9 +209,9 @@ VIRTUOSO_PASSW = "dba"
 
 
 GRAPH_ROOT = 'https://graph.ir.ee/users'
-# GRAPH_ROOT = 'http://192.168.33.19:9000/users'
+# GRAPH_ROOT = 'http://192.168.33.30:9000/users'
 
-REMOTE_COMMAND_HOST = 'http://192.168.33.19:9000/api/v1/commands/'
+REMOTE_COMMAND_HOST = 'http://192.168.33.30:9000/api/v1/commands/'
 
 GRAPH_USER_PW = 'secret'
 
@@ -312,20 +312,22 @@ _DEFAULT_SCOPES = []
 
 # TYK ENDPOINTS
 
-TYK_DASHBOARD_API_CREDENTIAL = '57411d62fbdc4c667a025df0843111c2'
-TYK_API_ORG_ID = "5733a58956c02c0af3000001"
-TYK_API_POLICY_ID = "5736153656c02c0b2e000003"
+TYK_DASHBOARD_API_CREDENTIAL = 'bf4686ad03e54faf749bdc3c6b0c3609'
+TYK_API_ORG_ID = "5749caca0b0c2433cc000001"
+TYK_API_POLICY_ID = "574a163f0b0c2433cc000003"
 
 TYK_GATEWAY_LISTEN_PORT = '8080'
-TYK_GATEWAY_HOST = 'http://my-tyk-instance.dev'
-TYK_GATEWAY = 'http://my-tyk-instance.dev:8080'
+# TYK_GATEWAY_HOST = 'http://my-tyk-instance.dev'
+TYK_GATEWAY_HOST = 'http://192.168.33.30'
+# TYK_GATEWAY = 'http://my-tyk-instance.dev:8080'
+TYK_GATEWAY = 'http://192.168.33.30:8080'
 TYK_OAUTH_AUTHORIZE_ENDPOINT = TYK_GATEWAY + '/tyk/oauth/authorize-client/'
 
 # If the user accepts the Client access and has authenticated successfully,
 # your app calls the Tyk REST API OAuth Authorization endpoint (/tyk/oauth/authorize-client/) with the POST parameters
 
 PDS_API_KEY = '5733a58956c02c0af3000001f5e5d3f5ecdc451a554bb18e26a4997b'
-PDS_API_ID = 'f8dda7f3475e48b741b137f32df9a8d5'
+PDS_API_ID = '746974365fe44c917abfd5c00c085542'
 PDS_API_NAME = 'PDS API v1'
 
 # https://tyk.io/docs/tyk-api-gateway-v1-9/tyk-rest-api/
