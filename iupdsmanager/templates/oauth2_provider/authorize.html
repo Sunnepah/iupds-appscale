@@ -17,9 +17,15 @@
                 <p>{% trans "Application requires following permissions" %}</p>
                 <ul>
                     {% for scope in scopes_descriptions %}
-                        <li>{{ scope }}</li>
+                        <li>{{ scope }} access on </li>
                     {% endfor %}
+                    <ol>
+                        <li>Email</li>
+                        <li>Telephone</li>
+                        <li>Address</li>
+                    </ol>
                 </ul>
+                <br>
 
                 <input id="id_redirect_uri" name="redirect_uri" type="hidden" value="{{ redirect_uri }}" />
                 <input id="id_scope" name="scope" type="hidden" value=" {{ scope }} " />
