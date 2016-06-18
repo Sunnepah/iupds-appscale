@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from iupdsmanager.views import index, profile, create_user, logout,\
     create_contact, contact_details, my_contacts, create_graphs,\
-    drop_graphs, create_graph_user
+    drop_graphs, create_graph_user, new_user
 
 from pdsoauth.views import application_list, revoke_application, oauth_login, oauth_tyk_notify, oauth_create_client
 
@@ -32,6 +32,7 @@ urlpatterns = [
     url(r'^api/v1/contact/details$', contact_details, name='contact_details'),
     url(r'^api/v1/mycontacts/$', my_contacts, name='my_contacts'),
     url(r'^api/v1/create_user/$', create_user, name='create_user'),
+    url(r'^api/v1/user/new/$', csrf_exempt(new_user), name='new_user'),
     url(r'^api/v1/graph/user/$', create_graph_user, name='create_graph_user'),
     url(r'^api/v1/drop_graphs/$', drop_graphs, name='drop_graphs'),
     url(r'^api/v1/create_graphs/$', create_graphs, name='create_graphs'),
