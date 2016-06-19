@@ -41,6 +41,6 @@ urlpatterns = [
     url(r'^oauth/login/$', oauth_login, name='oauth_login'),
     url(r'^oauth/tyk/notify/$', csrf_exempt(oauth_tyk_notify), name='oauth_tyk_notify'),
     url(r'^oauth/clients/create/$', csrf_exempt(oauth_create_client), name='oauth_create_client_notify'),
-    url(r'^api/v1/users/applications/$', application_list, name='user-applications'),
-    url(r'^api/v1/users/applications/(?P<pk>[0-9])/$', revoke_application, name='revoke-applications')
+    url(r'^api/v1/user/applications/$', application_list, name='user-applications'),
+    url(r'^api/v1/user/applications/(?P<pk>[0-9])/$', revoke_application, name='revoke-applications')
 ]

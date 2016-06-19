@@ -4,6 +4,7 @@ from google.appengine.api.users import UserNotFoundError
 import urllib
 import urllib2
 import json
+import cgi
 
 from .models import Profile, Contact, Address, Application, Grant, AccessToken, RefreshToken
 from django.shortcuts import render
@@ -198,10 +199,6 @@ def my_contacts(request):
 def create_graphs(request):
     if request.method == 'POST':
         try:
-            # create_graph(get_person_graph_uri())
-            # create_graph(get_email_graph_uri())
-            # create_graph(get_telephone_graph_uri())
-            # create_graph(get_address_graph_uri())
 
             return Response({'status': 'Graphs created!'}, status=status.HTTP_200_OK)
         except Exception as e:
@@ -234,9 +231,10 @@ def drop_graphs(request):
 def create_graph_user(request):
     try:
         username = get_user_id()
-        create_sql_graph_user(username)
+        if create_sql_graph_user(username):
+            create_user_graphs()
 
-        return Response({'status': 'User created!'}, status=status.HTTP_201_CREATED)
+            return Response({'status': 'User created!'}, status=status.HTTP_201_CREATED)
 
     except Exception as e:
         print e
@@ -412,23 +410,6 @@ def create_triple(subject, predicate, object_, type_=""):
         return triple
 
 
-def create_graph(graph):
-    try:
-        sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
-        sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
-
-        sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
-
-        sparql.setReturnFormat(JSON)
-        results = sparql.query().convert()
-        print results
-
-        return results
-    except Exception as e:
-        print e.message
-        return list()
-
-
 def get_user_id():
     user_profile = Profile.objects.get(email=get_user_email())
     return str(user_profile.id)
@@ -545,20 +526,49 @@ def get_bindings(graph):
         return False
 
 
-def create_sql_graph_user(username, password='secret'):
-    remote_command("DB.DBA.USER_CREATE('" + username + "', '" + password + "')")
-    remote_command('GRANT SPARQL_SELECT TO "' + username + '"')
-    remote_command('GRANT SPARQL_UPDATE TO "' + username + '"')
-    remote_command('GRANT SPARQL_SPONGE TO "' + username + '"')
+# When new user was created via AppScale Signup,
+# this endpoint is called to create sql user, setup the user graphs and profiles
+def new_user(request):
+    print "Create New User"
+    print request
+    try:
+        if request.method == 'POST':
+            received_json_data = json.loads(request.body)
 
-    username = get_user_id()
-    # Set graph permissions on just created user
-    set_user_permission_on_personal_graph(get_person_graph_uri(), username)
-    set_user_permission_on_personal_graph(get_email_graph_uri(), username)
-    set_user_permission_on_personal_graph(get_telephone_graph_uri(), username)
-    set_user_permission_on_personal_graph(get_address_graph_uri(), username)
+            email = cgi.escape(received_json_data['email'])
 
-    create_user_graphs()
+            print "Creating User"
+            from random import randint
+            id = randint(100, 999)  # randint is inclusive at both ends
+            new_profile = Profile(uid=id,email=email,username=email,
+                              appscale_user_id=id, user_id_old=id)
+            new_profile.save()
+            print "New User created!"
+
+            print "Creating SQl User"
+            if create_sql_graph_user(new_profile.id):
+                print "Creating User graphs"
+                create_user_graphs()
+
+            return HttpResponse(status=200)
+    except Exception as e:
+        print "exception"
+        print e
+        return HttpResponse(status=404)
+
+
+def create_sql_graph_user(username):
+    data = {'username': username}
+
+    data = urllib.urlencode(data)
+    req = urllib2.Request(settings.NEW_SQL_USER_ENDPOINT, data)
+    response = urllib2.urlopen(req)
+
+    if response.getcode() == 200:
+        return True
+    else:
+        return False
+
 
 def create_user_graphs():
     create_graph(get_person_graph_uri())
@@ -566,12 +576,38 @@ def create_user_graphs():
     create_graph(get_telephone_graph_uri())
     create_graph(get_address_graph_uri())
 
-def set_user_permission_on_personal_graph(graph, username):
-    remote_command("DB.DBA.RDF_DEFAULT_USER_PERMS_SET('" + username + "', 0)")
-    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(1) + ")")
-    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(2) + ")")
-    remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(3) + ")")
-    # remote_command("DB.DBA.RDF_GRAPH_USER_PERMS_SET('" + graph + "','" + username + "', " + str(4) + ")")
+
+def create_graph(graph):
+    try:
+        if set_user_permission_on_graph(graph):
+            sparql = SPARQLWrapper(SPARQL_AUTH_ENDPOINT)
+            sparql.setCredentials(get_user_id(), settings.GRAPH_USER_PW)
+
+            sparql.setQuery(""" CREATE GRAPH <""" + graph + """>""")
+
+            sparql.setReturnFormat(JSON)
+            results = sparql.query().convert()
+            print results
+
+            return results
+
+        return False
+    except Exception as e:
+        print e.message
+        return list()
+
+
+def set_user_permission_on_graph(graph, username):
+    data = {'username': username, 'graph': graph}
+
+    data = urllib.urlencode(data)
+    req = urllib2.Request(settings.GRAPH_USER_PERMISSION_ENDPOINT, data)
+    response = urllib2.urlopen(req)
+
+    if response.getcode() == 200:
+        return True
+
+    return False
 
 
 def get_email_graph_uri():
@@ -594,19 +630,6 @@ def get_person_graph_uri():
     return settings.GRAPH_ROOT + '/' + get_user_id() + '/persons'
 
 
-def remote_command(command):
-    values = {'cmd': command}
-
-    data = urllib.urlencode(values)
-    req = urllib2.Request(settings.REMOTE_COMMAND_HOST, data)
-    response = urllib2.urlopen(req)
-    print response.read()
-    if response.getcode() == 200:
-        return True
-    else:
-        return False
-
-
 def get_total_user_graph():
     total_telephone_graph = len(query_graph(get_telephone_graph_uri()))
     total_email_graph = len(query_graph(get_email_graph_uri()))
@@ -615,66 +638,6 @@ def get_total_user_graph():
     total_contact_graph = total_telephone_graph + total_email_graph + total_addresses_graph + total_persons_graph
 
     return total_contact_graph
-
-
-class ApplicationRegistration(CreateView):
-    """
-    View used to register a new Application for the request.user
-    """
-    template_name = "oauth2_provider/application_registration_form.html"
-
-    def get_form_class(self):
-        """
-        Returns the form class for the application model
-        """
-        return modelform_factory(Application, fields=(
-        'name', 'client_id', 'client_secret', 'client_type', 'authorization_grant_type', 'redirect_uris'))
-
-
-class ApplicationOwnerIsUserMixin():
-    """
-    This mixin is used to provide an Application queryset filtered by the current request.user.
-    """
-    fields = '__all__'
-
-    def get_queryset(self):
-        print get_user_email()
-        profile = Profile.objects.get(email=get_user_email())
-
-        return Application.objects.filter(user_id=profile.id)
-
-
-class ApplicationList(ApplicationOwnerIsUserMixin, ListView):
-    """
-    List view for all the applications owned by the request.user
-    """
-    context_object_name = 'applications'
-    template_name = "oauth2_provider/application_list.html"
-
-
-class ApplicationDetail(ApplicationOwnerIsUserMixin, DetailView):
-    """
-    Detail view for an application instance owned by the request.user
-    """
-    context_object_name = 'application'
-    template_name = "oauth2_provider/application_detail.html"
-
-
-class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
-    """
-    View used to update an application owned by the request.user
-    """
-    context_object_name = 'application'
-    template_name = "oauth2_provider/application_form.html"
-
-
-class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
-    """
-    View used to delete an application owned by the request.user
-    """
-    context_object_name = 'application'
-    success_url = reverse_lazy('oauth2_provider:list')
-    template_name = "oauth2_provider/application_confirm_delete.html"
 
 
 class Struct(object):
@@ -697,44 +660,3 @@ def get_object(adict):
     """
     return Struct(adict)
 
-def new_user(request):
-    print "Create New User"
-    print request
-    try:
-        if request.method == 'POST':
-            received_json_data = json.loads(request.body)
-
-            email = received_json_data['email']
-
-            print "Creating User"
-            from random import randint
-            id = randint(100, 999)  # randint is inclusive at both ends
-            profile = Profile(uid=id,email=email,username=email, appscale_user_id=id, user_id_old=id)
-            profile.save()
-            print "New User created!"
-
-            print "Creating SQl User"
-            password = "secret"
-            remote_command("DB.DBA.USER_CREATE('" + profile.id + "', '" + password + "')")
-            remote_command('GRANT SPARQL_SELECT TO "' + profile.id + '"')
-            remote_command('GRANT SPARQL_UPDATE TO "' + profile.id + '"')
-            remote_command('GRANT SPARQL_SPONGE TO "' + profile.id + '"')
-
-            username = get_user_id()
-            # Set graph permissions on just created user
-            set_user_permission_on_personal_graph(settings.GRAPH_ROOT + '/' + profile.id + '/emails', profile.id)
-            set_user_permission_on_personal_graph(settings.GRAPH_ROOT + '/' + profile.id + '/telephones', profile.id)
-            set_user_permission_on_personal_graph(settings.GRAPH_ROOT + '/' + profile.id + '/addresses', profile.id)
-            set_user_permission_on_personal_graph(settings.GRAPH_ROOT + '/' + profile.id + '/persons', profile.id)
-
-            print "Creating User Graphs"
-            create_graph(settings.GRAPH_ROOT + '/' + profile.id + '/emails')
-            create_graph(settings.GRAPH_ROOT + '/' + profile.id + '/telephones')
-            create_graph(settings.GRAPH_ROOT + '/' + profile.id + '/addresses')
-            create_graph(settings.GRAPH_ROOT + '/' + profile.id + '/persons')
-
-            return HttpResponse(status=200)
-    except Exception as e:
-        print "exception"
-        print e
-        return HttpResponse(status=404)

@@ -211,7 +211,8 @@ VIRTUOSO_PASSW = "dba"
 GRAPH_ROOT = 'https://graph.ir.ee/users'
 # GRAPH_ROOT = 'http://192.168.33.30:9000/users'
 
-REMOTE_COMMAND_HOST = 'http://192.168.33.30:9000/api/v1/commands/'
+NEW_SQL_USER_ENDPOINT = 'http://192.168.33.30:9000/api/v1/user/new/'
+GRAPH_USER_PERMISSION_ENDPOINT = 'http://192.168.33.30:9000/api/v1/user/graph/grant/'
 
 GRAPH_USER_PW = 'secret'
 
