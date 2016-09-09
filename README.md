@@ -9,7 +9,8 @@ The entire PDS POC has 3 setup components - carry out the setup in this order
 #### Setup AppScale - Full details [here](https://github.com/AppScale/appscale/wiki/AppScale-on-VirtualBox)
 * `$ mkdir -p ~/appscale`
 * `$ cd ~/appscale   # appscale working directory`
-* `$ git clone https://github.com/AppScale/appscale-tools.git`
+* `$ git clone https://github.com/Sunnepah/appscale.git`
+* `$ git clone https://github.com/Sunnepah/appscale-tools.git`
 * `$ cd appscale-tools`
 * `$ wget https://bootstrap.pypa.io/ez_setup.py -O - | sudo python` # If Python Setuptools is not install already
 * `$ sudo python setup.py install`  # Detailed [AppScale-tools installation](https://github.com/AppScale/appscale-tools/wiki/Installing-the-AppScale-Tools)
