@@ -276,12 +276,12 @@ _DEFAULT_SCOPES = []
 #     }
 # }
 
-#===================APPSCALE========================
+# ===================APPSCALE========================
 APPSC_KEY = 'app_secret'
 APPSCALE_PDS_HOST = 'http://192.168.33.10:8080'
 
 
-#==============TYK API GATEWAY========================
+# ==============TYK API GATEWAY========================
 TYK_API_ORG_ID = "577417e90b0c240354000001"
 TYK_API_POLICY_ID = "57741e9f0b0c240354000003"
 
@@ -317,7 +317,7 @@ TYK_INVALIDATE_REFRESH_TOKEN = TYK_GATEWAY + '/tyk/oauth/refresh'
 TYK_DELETE_ACCESS_TOKEN = TYK_GATEWAY + '/tyk/keys/'
 
 
-#===========VIRTUOSO DATABASE==============================
+# ===========VIRTUOSO DATABASE==============================
 VIRTUOSO_HOST = "192.168.33.30"
 VIRTUOSO_PORT = "8890"
 VIRTUOSO_USER = "dba"
@@ -327,7 +327,7 @@ SPARQL_ENDPOINT = "http://192.168.33.30:8890/sparql"
 SPARQL_AUTH_ENDPOINT = "http://192.168.33.30:8890/sparql-auth"
 
 
-#=========PDS GRAPH API SERVICE==============================
+# =========PDS GRAPH API SERVICE==============================
 GRAPH_ROOT = 'https://mypds.me/users'
 GRAPH_USER_PERMISSION_ENDPOINT = 'http://192.168.33.30:9000/api/v1/user/graph/grant/'
 GRAPH_USER_PW = 'secret'
