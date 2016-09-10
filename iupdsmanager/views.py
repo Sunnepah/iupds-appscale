@@ -24,13 +24,6 @@ import re
 from rest_framework.exceptions import APIException
 import logging
 
-from django.forms.models import modelform_factory
-from django.views.generic import CreateView, ListView, DetailView, DeleteView, UpdateView
-
-# ouath2
-from oauthlib.oauth2 import BearerToken
-from iupdsmanager.authorization_code import AuthorizationCodeGrantPds
-
 SPARQL_ENDPOINT = settings.SPARQL_ENDPOINT
 SPARQL_AUTH_ENDPOINT = settings.SPARQL_AUTH_ENDPOINT
 

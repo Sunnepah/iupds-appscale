@@ -68,14 +68,11 @@ def revoke_application(request, pk):
 
                 application = Application.objects.get(pk=pk)
                 tokens = AccessToken.objects.filter(application=application, user=get_profile()).values()
-                print tokens
 
                 pds_auth = AuthorizationCodeGrantPds()
 
                 # make DELETE
                 for token in tokens:
-                    print 'tokens'
-                    print token['token']
                     pds_auth.revoke_token(token['token'], 'access_token', request)
                     r = urlfetch.fetch(url=settings.TYK_DELETE_ACCESS_TOKEN + "/" +
                                        token['token'] + "?api_id=" + settings.PDS_API_ID,
@@ -84,7 +81,6 @@ def revoke_application(request, pk):
                     if r.status_code == 200:
                         response = simplejson.loads(r.content)
                         print "Delete token from tyk"
-                        print response
 
                         print "Deleting Grants"
                         Grant.objects.filter(application=application, user=get_profile()).delete()
@@ -112,7 +108,7 @@ def oauth_login(request):
             app = Application.objects.get(client_id=client_id)
             redirect_uri = str(app.redirect_uris)
 
-            post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + \
+            post_login_redirect_url = settings.APPSCALE_PDS_HOST + "/oauth/login/?client_id=" + client_id + \
                                       "&redirect_uri=" + redirect_uri + "&state=random_state_string&response_type=code"
 
             if is_logged_in():
