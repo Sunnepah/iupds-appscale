@@ -38,8 +38,7 @@
     * @memberOf iupds.profiles.services.Profile
     */
     function destroy(profile) {
-      return $http.delete('/api/v1/profile/');
-      ///api/v1/profile/
+      return $http.delete('/api/v1/user/profile/');
     }
 
 
@@ -51,7 +50,7 @@
     * @memberOf iupds.profiles.services.Profile
     */
     function get(username) {
-      return $http.get('/api/v1/profile/');
+      return $http.get('/api/v1/user/profile/');
     }
 
 
@@ -63,7 +62,7 @@
     * @memberOf iupds.profiles.services.Profile
     */
     function update(profile) {
-      return $http.put('/api/v1/profile/', profile);
+      return $http.put('/api/v1/user/profile/', profile);
     }
   }
 })();

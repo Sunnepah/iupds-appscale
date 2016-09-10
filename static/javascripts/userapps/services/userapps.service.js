@@ -38,7 +38,7 @@
         /**
          */
         function revokeConnectedAppsAccess(client_id) {
-            return $http.delete('/api/v1/user/applications/'+client_id+'/');
+            return $http.delete('/api/v1/user/applications/' + client_id + '/');
         }
 
     } //end Factory
