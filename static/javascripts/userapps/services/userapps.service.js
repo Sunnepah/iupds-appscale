@@ -32,13 +32,13 @@
         /**
         */
         function getUserConnectedApps() {
-            return $http.get('/api/v1/users/applications/');
+            return $http.get('/api/v1/user/applications/');
         }
 
         /**
          */
         function revokeConnectedAppsAccess(client_id) {
-            return $http.delete('/api/v1/users/applications/'+client_id+'/');
+            return $http.delete('/api/v1/user/applications/' + client_id + '/');
         }
 
     } //end Factory

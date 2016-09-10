@@ -1,4 +1,5 @@
 # coding=utf-8
+
 import simplejson
 import json
 import logging
@@ -16,92 +17,18 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 
 from iupds import settings
-from iupdsmanager.views import is_logged_in, get_user_email, get_profile
+from iupdsmanager.views import is_logged_in, ServiceUnavailable, get_object
 from iupdsmanager.models import Application, Profile, AccessToken, Grant
+
 # ouath2
 from iupdsmanager.authorization_code import AuthorizationCodeGrantPds
-from iupdsmanager.views import ServiceUnavailable, get_object, get_user_id
+from iupdsmanager.user_data import UserData
 
 log = logging.getLogger('oauth2_provider')
 logging.basicConfig(level=logging.DEBUG)
 # log = logging.getLogger(__name__)
 
-
-@api_view(['GET'])
-@renderer_classes((JSONRenderer,))
-def application_list(request):
-    try:
-        """
-        Get all Connected to the current User.
-        """
-        if request.method == 'GET':
-            if is_logged_in():
-
-                user_profile = Profile.objects.filter(email=get_user_email())
-                apps = Grant.objects.filter(user=user_profile).values_list('application__pk', flat=True)
-                applications = Application.objects.filter(pk__in=apps).values()
-
-                return Response({'user_applications': applications})
-            else:
-                users.create_login_url('/')
-        else:
-            return Response({'status': False, 'message': 'Method not allowed'},
-                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    except Application.DoesNotExist or Profile.DoesNotExist:
-        return Response({'status': False, 'message': 'Not Found'}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(['DELETE'])
-@renderer_classes((JSONRenderer,))
-def revoke_application(request, pk):
-    try:
-        """
-        Get all Connected to the current User.
-        """
-        if request.method == 'DELETE':
-            if is_logged_in():
-
-                # delete /tyk/oauth/refresh/{key}?api_id={api_id}
-                headers = {'Content-Type': 'application/x-www-form-urlencoded',
-                           'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
-
-                application = Application.objects.get(pk=pk)
-                tokens = AccessToken.objects.filter(application=application, user=get_profile()).values()
-                print tokens
-
-                pds_auth = AuthorizationCodeGrantPds()
-
-                # make DELETE
-                for token in tokens:
-                    print 'tokens'
-                    print token['token']
-                    pds_auth.revoke_token(token['token'], 'access_token', request)
-                    r = urlfetch.fetch(url=settings.TYK_DELETE_ACCESS_TOKEN + "/" +
-                                       token['token'] + "?api_id=" + settings.PDS_API_ID,
-                                       method=urlfetch.DELETE, headers=headers)
-
-                    if r.status_code == 200:
-                        response = simplejson.loads(r.content)
-                        print "Delete token from tyk"
-                        print response
-
-                        print "Deleting Grants"
-                        Grant.objects.filter(application=application, user=get_profile()).delete()
-
-                        return Response()
-                    else:
-                        response = simplejson.loads(r.content)
-                        print "unable to delete token from tyk"
-                        print response
-            else:
-                users.create_login_url('/')
-        else:
-            return Response({'status': False, 'message': 'Method not allowed'},
-                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    except Application.DoesNotExist or Profile.DoesNotExist or AccessToken.DoesNotExist:
-        return Response({'status': False, 'message': 'Not Found'}, status=status.HTTP_404_NOT_FOUND)
+user_data = UserData()
 
 
 def oauth_login(request):
@@ -112,7 +39,7 @@ def oauth_login(request):
             app = Application.objects.get(client_id=client_id)
             redirect_uri = str(app.redirect_uris)
 
-            post_login_redirect_url = settings.APPSCALE_APP_URL + "/oauth/login/?client_id=" + client_id + \
+            post_login_redirect_url = settings.APPSCALE_PDS_HOST + "/oauth/login/?client_id=" + client_id + \
                                       "&redirect_uri=" + redirect_uri + "&state=random_state_string&response_type=code"
 
             if is_logged_in():
@@ -125,7 +52,26 @@ def oauth_login(request):
         elif request.method == 'POST':
             if 'allow' in request.POST and request.POST.get('allow') == 'Authorize':
 
-                payload = 'response_type=code&client_id='+str(request.POST.get('client_id')).strip()+'&redirect_uri='+str(request.POST.get('redirect_uri')).strip()+'&state='+str(request.POST.get('state')).strip()+'&scope='+str(request.POST.get('scope')).strip()+'&key_rules={"allowance":1000,"rate":1000,"per":60,"expires":'+str(settings.ACCESS_TOKEN_EXPIRE_SECONDS)+',"quota_max":-1,"quota_renews":1406121006,"quota_remaining":0,"quota_renewal_rate":60,"access_rights":{"'+settings.PDS_API_ID+'":{"api_name":"'+settings.PDS_API_NAME+'","api_id":"'+settings.PDS_API_ID+'","versions":["Default"],"allowed_urls":[{"url":"/api/v1/users/'+str(get_user_id()).strip()+'/emails/(.*)","methods":["GET"]},{"url":"/api/v1/users/'+str(get_user_id()).strip()+'/telephones/(.*)","methods":["GET"]},{"url":"/api/v1/users/'+str(get_user_id()).strip()+'/addresses/(.*)","methods":["GET"]},{"url":"/api/v1/users/'+str(get_user_id()).strip()+'/persons/(.*)","methods":["GET"]}]}},"org_id":"'+settings.TYK_API_ORG_ID+'","oauth_client_id":"'+str(request.POST.get('client_id')).strip()+'","hmac_enabled":false,"hmac_string":"","apply_policy_id":"'+settings.TYK_API_POLICY_ID+'"}'
+                payload = 'response_type=code&client_id=' + str(request.POST.get('client_id')).strip()+'&redirect_uri='\
+                  + str(request.POST.get('redirect_uri')).strip() + '&state=' \
+                  + str(request.POST.get('state')).strip() + '&scope='\
+                  + str(request.POST.get('scope')).strip() \
+                  + '&key_rules={"allowance":1000,"rate":1000,"per":60,"expires":' \
+                  + str(settings.ACCESS_TOKEN_EXPIRE_SECONDS) \
+                  + ',"quota_max":-1,"quota_renews":1406121006,"quota_remaining":0,' \
+                    '"quota_renewal_rate":60,"access_rights":{"' + settings.PDS_API_ID \
+                  + '":{"api_name":"' + settings.PDS_API_NAME + '","api_id":"' \
+                  + settings.PDS_API_ID \
+                  + '","versions":["Default"],"allowed_urls":[{"url":"/api/v1/users/' \
+                  + str(user_data.get_user_id()).strip() \
+                  + '/emails/(.*)","methods":["GET"]},{"url":"/api/v1/users/' \
+                  + str(user_data.get_user_id()).strip()+'/telephones/(.*)","methods":["GET"]},{"url":"/api/v1/users/' \
+                  + str(user_data.get_user_id()).strip()+'/addresses/(.*)","methods":["GET"]},{"url":"/api/v1/users/' \
+                  + str(user_data.get_user_id()).strip()+'/persons/(.*)","methods":["GET"]}]}},' \
+                                               '"org_id":"' + settings.TYK_API_ORG_ID+'","oauth_client_id":"' \
+                  + str(request.POST.get('client_id')).strip() \
+                  + '","hmac_enabled":false,"hmac_string":"","apply_policy_id":"' \
+                  + settings.TYK_API_POLICY_ID+'"}'
 
                 headers = {'Content-Type': 'application/x-www-form-urlencoded',
                            'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
@@ -140,7 +86,7 @@ def oauth_login(request):
                     # save
                     grant = AuthorizationCodeGrantPds()
 
-                    user_profile = Profile.objects.get(email=get_user_email())
+                    user_profile = Profile.objects.get(email=user_data.get_user_email())
 
                     client_id = str(request.GET.get('client_id'))
                     application = Application.objects.get(client_id=client_id)
@@ -257,3 +203,84 @@ def oauth_create_client(request):
     except Exception as e:
         print e.message
         return HttpResponse(status=404)
+
+
+@api_view(['GET'])
+@renderer_classes((JSONRenderer,))
+def application_list(request):
+    try:
+        """
+        Get all Connected to the current User.
+        """
+        if request.method == 'GET':
+            if is_logged_in():
+
+                user_profile = Profile.objects.filter(email=user_data.get_user_email())
+                apps = Grant.objects.filter(user=user_profile).values_list('application__pk', flat=True)
+                applications = Application.objects.filter(pk__in=apps).values()
+
+                return Response({'user_applications': applications})
+            else:
+                users.create_login_url('/')
+        else:
+            return Response({'status': False, 'message': 'Method not allowed'},
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    except Application.DoesNotExist or Profile.DoesNotExist:
+        return Response({'status': False, 'message': 'Not Found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['DELETE'])
+@renderer_classes((JSONRenderer,))
+def revoke_application(request, pk):
+    try:
+        """
+        Get all Connected to the current User.
+        """
+        if request.method == 'DELETE':
+            if is_logged_in():
+
+                # delete /tyk/oauth/refresh/{key}?api_id={api_id}
+                headers = {'Content-Type': 'application/x-www-form-urlencoded',
+                           'x-tyk-authorization': settings.TYK_AUTHORIZATION_NODE_SECRET, 'cache-control': "no-cache"}
+
+                application = Application.objects.get(pk=pk)
+                tokens = AccessToken.objects.filter(application=application, user=user_data.get_profile()).values()
+
+                pds_auth = AuthorizationCodeGrantPds()
+
+                # make DELETE
+                for token in tokens:
+                    pds_auth.revoke_token(token['token'], 'access_token', request)
+                    r = urlfetch.fetch(url=settings.TYK_DELETE_ACCESS_TOKEN + "/" +
+                                       token['token'] + "?api_id=" + settings.PDS_API_ID,
+                                       method=urlfetch.DELETE, headers=headers)
+
+                    if r.status_code == 200:
+                        response = simplejson.loads(r.content)
+                        print "Delete token from tyk"
+
+                        print "Deleting Grants"
+                        Grant.objects.filter(application=application, user=user_data.get_profile()).delete()
+
+                        return Response()
+                    else:
+                        response = simplejson.loads(r.content)
+                        print "unable to delete token from tyk"
+                        print response
+            else:
+                users.create_login_url('/')
+        else:
+            return Response({'status': False, 'message': 'Method not allowed'},
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    except Application.DoesNotExist or Profile.DoesNotExist or AccessToken.DoesNotExist:
+        return Response({'status': False, 'message': 'Not Found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def logout(request):
+    if is_logged_in():
+        return Response({'logout_url': users.create_logout_url("/", _auth_domain=None)}, status=status.HTTP_200_OK)
+    else:
+        return Response({'status': 'Bad request', 'message': 'The user is not logged in'}, status=status.HTTP_410_GONE)

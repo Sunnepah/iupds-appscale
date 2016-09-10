@@ -37,7 +37,7 @@
         /**
         */
         function getCurrentUserProfile() {
-            return $http.get('/api/v1/profile/', {
+            return $http.get('/api/v1/user/profile/', {
             }).then(successFn, failureFn);
         }
 
@@ -56,7 +56,7 @@
                 //return $http.get('/api/v1/profile/', {
                 //}).then(successGraphFn, failureGraphFn);
 
-                $http.get('/api/v1/profile/')
+                $http.get('/api/v1/user/profile/')
                           .then(function(result) {
                             console.log(result.data);
                 });
@@ -78,13 +78,14 @@
         * @desc Try to register a new user
         * @param {string} password The password entered by the user
         * @param {string} email The email entered by the user
+        * @param password_confirmation
         * @returns {Promise}
         * @memberOf iupds.iupdsmanager.services.Dashboard
         */
         function register(email, password, password_confirmation) {
 
             $http({
-                url: "/api/v1/create_user/",
+                url: "/api/v1/user/",
                 dataType: "json",
                 method: "POST",
                 data:{email: email,password: password,password_confirmation: password_confirmation },
@@ -114,7 +115,7 @@
             });
 
             $http({
-                url: "/api/v1/create_graphs/",
+                url: "/api/v1/user/graph/create",
                 dataType: "json",
                 method: "POST",
                 headers: {
@@ -130,7 +131,7 @@
         function dropGraphs() {
 
             $http({
-                url: "/api/v1/drop_graphs/",
+                url: "/api/v1/user/graph/drop/",
                 dataType: "json",
                 method: "DELETE",
                 headers: {

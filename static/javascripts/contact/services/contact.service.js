@@ -13,7 +13,7 @@
 
     /**
     * @namespace Contact
-    * @return {Factory}
+    * @return {{createContact: createContact, getContactDetails: getContactDetails}}
     */
     function Contact($cookies, $http) {
         /**
@@ -35,11 +35,11 @@
         */
 
         function createContact(contact) {
-                return $http.post('/api/v1/contact/', contact);
+                return $http.post('/api/v1/user/contact/', contact);
         }
 
         function getContactDetails() {
-                return $http.get('/api/v1/contact/details');
+                return $http.get('/api/v1/user/contact/details');
         }
 
     } //end Factory

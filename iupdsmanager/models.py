@@ -123,7 +123,7 @@ class Contact(models.Model):
 
     CONTACT_TYPE = (
         (HOME, 'Home'),
-        (OFFICE, 'Offcice'),
+        (OFFICE, 'Office'),
         (MOBILE, 'Mobile'),
         (VOICE, 'Voice'),
     )
@@ -136,6 +136,39 @@ class Contact(models.Model):
 
     def __unicode__(self):
         return self.contact
+
+    @staticmethod
+    def build_email_contact(data, user_profile):
+        return Contact(contact=data["email"], contact_section=Contact.EMAIL, profile_id=user_profile.id)
+
+    @staticmethod
+    def build_phone_contact(data, user_profile):
+        if data["telephone_type"] == Contact.HOME:
+            _type = Contact.HOME
+        elif data["telephone_type"] == Contact.MOBILE:
+            _type = Contact.MOBILE
+        elif data["telephone_type"] == Contact.OFFICE:
+            _type = Contact.OFFICE
+        elif data["telephone_type"] == Contact.VOICE:
+            _type = Contact.VOICE
+        else:
+            _type = ""
+
+        return Contact(contact=data["telephone"], contact_type=_type, contact_section=Contact.PHONE,
+                       profile_id=user_profile.id)
+
+    @staticmethod
+    def build_skype_contact(data, user_profile):
+        return Contact(contact=data["skype"], contact_section=Contact.SKYPE, profile_id=user_profile.id)
+
+    @staticmethod
+    def build_address(data, user_profile):
+        if data["street1"] is not None and data["street2"] is not None:
+            street = data["street1"] + ", " + data["street2"]
+        else:
+            street = data["street1"]
+        return Address(street=street, city=data["city"], post_code=data["post_code"], profile_id=user_profile.id,
+                       primary=True, country=data["country"])
 
 
 class Address(models.Model):

@@ -30,37 +30,26 @@
                   'post_code': '',
                   'country': ''};
 
-//    vm.contact = {'email': 'sunday.ayandokun@ut.ee',
-//                      'telephone': '+37256724770',
-//                      'telephone_type': 'Mobile',
-//                      'street1': 'RAATUSE 22 - 326',
-//                      'street2': 'RAATUSE 22 - 326',
-//                      'city': 'Tartu',
-//                      'post_code': '51009',
-//                      'country': 'Estonia'};
-
-    //activate();
-
      /**
     * @name activate
     * @desc Actions to be performed when this controller is instantiated.
     * @memberOf iupds.profiles.controllers.ContactController
     */
     function activate() {
-      var authenticatedAccount = Authentication.getAuthenticatedAccount();
+          var authenticatedAccount = Authentication.getAuthenticatedAccount();
 
-      // Redirect if not logged in
-      if (!authenticatedAccount) {
-        Authentication.logout();
-        Snackbar.error('You are not authorized to view this page.');
-      }
-//      else {
-//        // Redirect if logged in, but not the owner of this profile.
-//        if (authenticatedAccount.username !== username) {
-//          $location.url('/');
-//          Snackbar.error('You are not authorized to view this page.');
-//        }
-//      }
+          // Redirect if not logged in
+          if (!authenticatedAccount) {
+            Authentication.logout();
+            Snackbar.error('You are not authorized to view this page.');
+          }
+          else {
+            // Redirect if logged in, but not the owner of this profile.
+            if (authenticatedAccount.username !== username) {
+                $location.url('/');
+                Snackbar.error('You are not authorized to view this page.');
+            }
+         }
     }
 
     /**

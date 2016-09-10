@@ -5,7 +5,7 @@
   roles:
   - ansible-mysql
   tasks:
-  - name: Add Tyk Domain to Hosts File
+  - name: Add Tyk Domain to Appscale Hosts File
     shell: echo '{{ tyk_vm_ip }} http://{{ tyk_dashboard_domain }} {{ tyk_dashboard_domain }}' | sudo tee --append /etc/hosts
   vars:
       db_user: root
