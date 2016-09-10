@@ -17,7 +17,7 @@ The entire PDS POC has 3 setup components - carry out the setup in this order
 * `$ cd ../`    # go back to AppScale working directory
  
 ### Clone this repository into AppScale working directory.
-* `$ git clone https://github.com/Sunnepah/iupds-appscale.git pds`
+* `$ git clone --recursive https://github.com/Sunnepah/iupds-appscale.git pds`
 * `$ cd pds/`
 * `$ sudo pip install virtualenv` 
 * `$ virtualenv venv` 
@@ -29,10 +29,6 @@ The entire PDS POC has 3 setup components - carry out the setup in this order
 * `$ bower install`
 * `$ gulp default`
 * `$ python manage.py collectstatic`
-
-#### Cloning forked libraries
-* `$ git clone https://github.com/Sunnepah/python-virtuoso.git virtuoso`
-* `$ git clone https://github.com/Sunnepah/sparqlwrapper.git sparqlwrapper`
 
 #### Deploy pds to AppScale!
 * `$ cd ../`    # Return to AppScale working directory
