@@ -15,6 +15,6 @@
 from django.conf.urls import include, url
 
 urlpatterns = [
-    url(r'^/', include('iupdsmanager.urls')),
-    url(r'^/', include('pdsoauth.urls')),
+    url(r'^', include('iupdsmanager.urls')),
+    url(r'^', include('pdsoauth.urls')),
 ]

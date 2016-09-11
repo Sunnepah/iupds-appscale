@@ -53,7 +53,7 @@
         }
 
         function getGraphCount() {
-                //return $http.get('/api/v1/profile/', {
+                //return $http.get('/api/v1/user/profile/', {
                 //}).then(successGraphFn, failureGraphFn);
 
                 $http.get('/api/v1/user/profile/')

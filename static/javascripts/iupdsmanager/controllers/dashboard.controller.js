@@ -34,7 +34,7 @@
             vm.user = Authentication.getAuthenticatedAccount()
         }
 
-        $http.get('/api/v1/profile/')
+        $http.get('/api/v1/user/profile/')
           .then(function(result) {
             vm.data = result.data;
             vm.contact_graph = vm.data.contact_graph;
