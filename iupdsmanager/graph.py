@@ -148,10 +148,10 @@ class Graph:
         if graph is not None:
             return self.get_user_graph_count(graph)
 
-        total = self.get_user_graph_count(self.get_graph_uri(user_id, graph.PERSONS_GRAPH))
-        total += self.get_user_graph_count(self.get_graph_uri(user_id, graph.EMAILS_GRAPH))
-        total += self.get_user_graph_count(self.get_graph_uri(user_id, graph.ADDRESSES_GRAPH))
-        total += self.get_user_graph_count(self.get_graph_uri(user_id, graph.TELEPHONES_GRAPH))
+        total = self.get_user_graph_count(self.get_graph_uri(user_id, self.PERSONS_GRAPH))
+        total += self.get_user_graph_count(self.get_graph_uri(user_id, self.EMAILS_GRAPH))
+        total += self.get_user_graph_count(self.get_graph_uri(user_id, self.ADDRESSES_GRAPH))
+        total += self.get_user_graph_count(self.get_graph_uri(user_id, self.TELEPHONES_GRAPH))
 
         return total
 
