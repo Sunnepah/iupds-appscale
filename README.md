@@ -24,6 +24,7 @@ The entire PDS POC has 3 setup components - carry out the setup in this order
 * `$ source venv/bin/activate`
 * `$ pip install -r requirements-local.txt`
 * `$ pip install -r requirements-vendor.txt -t lib` # for AppScale deployment
+NOTE: In case you don't have nodejs,bower,gulp installed yet, install them first [nodejs](https://nodejs.org/en/),[bower](https://bower.io/), [gulp](http://gulpjs.com/) 
 * `$ npm install bower`
 * `$ npm install`
 * `$ bower install`
